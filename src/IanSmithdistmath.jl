@@ -1,5 +1,7 @@
 module IanSmithdistmath
 
-# Write your package code here.
+export remap
+
+include("utilities.jl")
 
 end
