@@ -23,16 +23,16 @@
 
 Option Explicit
 
-Type TValues
+mutable struct TValues
    value::Float64
-   Log2Adds  As Integer
-End Type
+   Log2Adds ::Int16
+end
 
-Type TAddStack
+mutable struct TAddStack
    Store::Bool
-   Where As Integer
-   Stack(50) As TValues
-End Type
+   Where::Int16
+   Stack(50)::TValues
+end
 
 const NonIntegralValuesAllowed_df = true    # Are non-integral degrees of freedom for t, chi_square and f distributions allowed?
 const NonIntegralValuesAllowed_NB = true    # Is "successes required" parameter for negative binomial allowed to be non-integral?
@@ -208,32 +208,32 @@ const coeffs0Minusp25 = 0.07246703342411321823620758332301 #0.072467033424113218
 const coeffs0Minus1Third = -0.01086629990922011509333333333333 #-0.01086629990922011509333333333333
 const quiteSmall = 0.00000000000001
 
-Dim hTerm::Float64 #Global written to only by PBB to hold the pmf_hypergeometric value.
-Dim lfbArray(29)::Float64
-Dim lfbArrayInitialised::Bool
-Dim coeffs(44)::Float64
-Dim coeffsInitialised::Bool
-Dim coeffs2(44)::Float64
-Dim coeffs2Initialised::Bool
+hTerm::Float64 = convert(Float64, 0) #Global written to only by PBB to hold the pmf_hypergeometric value.
+lfbArray::Array{Float64,1} = Array{Float64,1}(undef, 30)
+lfbArrayInitialised::Bool = convert(Bool, 0)
+coeffs::Array{Float64,1} = Array{Float64,1}(undef, 45)
+coeffsInitialised::Bool = convert(Bool, 0)
+coeffs2::Array{Float64,1} = Array{Float64,1}(undef, 45)
+coeffs2Initialised::Bool = convert(Bool, 0)
 
-Private Sub InitAddStack(ByRef ast As TAddStack)
+function  InitAddStack(ByRef ast::TAddStack)
 ast.Store = true
 ast.Where = 0
 ast.Stack(0).Log2Adds = 0
 ast.Stack(0).value = 0.0
-End Sub
+end
 
-Private Sub DumpAddStack(ByRef ast As TAddStack)
-Dim i As Integer
+function  DumpAddStack(ByRef ast::TAddStack)
+i::Int16 = convert(Int16, 0)
    Debug.Print "DumpAddStack"
    Debug.Print ast.Store
    For i = ast.Where To 0 Step -1
       Debug.Print i, ast.Stack(i).value, ast.Stack(i).Log2Adds
    Next i
    Debug.Print
-End Sub
+end
 
-Private Sub AddValueToStack(ByRef ast As TAddStack, nextValue::Float64)
+function  AddValueToStack(ByRef ast::TAddStack, nextValue::Float64)
 if ast.Store
    if ast.Stack(ast.Where).Log2Adds = 0
       ast.Stack(ast.Where).value = nextValue
@@ -251,15 +251,15 @@ else
          ast.Stack(ast.Where).value = ast.Stack(ast.Where).value + ast.Stack(ast.Where + 1).value
          ast.Stack(ast.Where).Log2Adds = ast.Stack(ast.Where).Log2Adds + 1
       else
-         Exit Do
+         break
       end
    end
 end
 ast.Store = !ast.Store
-End Sub
+end
 
-function  StackTotal(ByRef ast As TAddStack)::Float64
-Dim sum::Float64, c::Float64, t::Float64, y::Float64, i As Integer
+function  StackTotal(ByRef ast::TAddStack)::Float64
+sum::Float64 = convert(Float64, 0), c::Float64, t::Float64, y::Float64, i::Int16
    sum = 0.0
    c = 0.0
    For i = ast.Where To 0 Step -1
@@ -272,9 +272,9 @@ Dim sum::Float64, c::Float64, t::Float64, y::Float64, i As Integer
 end
 
 function  TestAddValuesToStack()::Float64
-Dim ast As TAddStack
-Dim value::Float64
-Dim i As Long, k As Long
+ast::TAddStack = convert(TAddStack, 0)
+value::Float64 = convert(Float64, 0)
+i::Int32 = convert(Int32, 0), k::Int32
 Call InitAddStack(ast)
 value = 1.0000000000001
 For k = 1 To 10
@@ -305,8 +305,8 @@ Next k
 TestAddValuesToStack = StackTotal(ast)
 end
 
-Private Sub initlfbArray()
-if Not lfbArrayInitialised
+function  initlfbArray()
+if !lfbArrayInitialised
 lfbArray(0) = cf_0
 lfbArray(1) = cf_1
 lfbArray(2) = cf_2
@@ -339,10 +339,10 @@ lfbArray(28) = cf_28
 lfbArray(29) = cf_29
 lfbArrayInitialised = true
 end
-End Sub
+end
 
-Private Sub initCoeffs()
-if Not coeffsInitialised
+function  initCoeffs()
+if !coeffsInitialised
 #// for i < UBound coeffs, coeffs[i] holds (zeta(i+2)-1)/(i+2), coeffs[UBound coeffs] holds (zeta(UBound coeffs+2)-1)
 coeffs(0)=0.32246703342411321824    #0.32246703342411321824
 coeffs(1)=6.7352301053198095133e-02 #6.7352301053198095133e-02
@@ -391,9 +391,9 @@ coeffs(43)=6.3159355041984485676779394847024e-16 #6.3159355041984485676779394847
 coeffs(44)=1.421085482803160676983430580383e-14 #1.421085482803160676983430580383e-14
 coeffsInitialised = true
 end
-End Sub
-Private Sub initCoeffs2()
-if Not coeffs2Initialised
+end
+function  initCoeffs2()
+if !coeffs2Initialised
 #// coeffs[i] holds (zeta(i+2)-1)/(i+2) - (i+5)/(i+2)/(i+1)*2^(-i-3)
 coeffs2(0)=9.96703342411321823620758332301e-3 #9.96703342411321823620758332301e-3
 coeffs2(1)=4.85230105319809513323333333333e-3 #4.85230105319809513323333333333e-3
@@ -468,16 +468,16 @@ coeffs2(44)=1.40735520163755175636e-16 #1.40735520163755175636e-16
 #coeffs2(70)=1.38769580071555495253e-24 #1.38769580071555495253e-24
 coeffs2Initialised = true
 end
-End Sub
+end
 
 function  ec()::Float64
 ec = eulers_const
 end
 
-function  logcfdersum(x::Float64, i::Float64, d::Float64, Optional derivs As Integer = 0)::Float64
+function  logcfdersum(x::Float64, i::Float64, d::Float64, Optional derivs::Int16 = 0)::Float64
 #// Calculation of logcfdersum(x,i,d,derivs) via summation, where derivs is the number of derivatives wrt x required of the normal logcf(x,i,d) function.
 #// Will become hopelessly slow for x >= 0.5
-Dim tot::Float64, addon::Float64, y::Float64, nd::Float64, k As Integer
+tot::Float64 = convert(Float64, 0), addon::Float64, y::Float64, nd::Float64, k::Int16
 tot = 1.0
 y = x / (x - 1.0)
 nd = (derivs + 1.0) * d
@@ -495,7 +495,7 @@ end
 
 function  deriv2cf(x::Float64, i::Float64, d::Float64)::Float64
 #// Accurate calculation of derivative of logcf(x,i,d) wrt x, when x is small in absolute value.
-Dim n::Float64, j::Float64, tot::Float64, xtojm1::Float64, addon::Float64
+n::Float64 = convert(Float64, 0), j::Float64, tot::Float64, xtojm1::Float64, addon::Float64
 n = i + 2.0 * d
 tot = 2.0 / n
 j = 2.0
@@ -515,7 +515,7 @@ end
 
 function  derivcf(x::Float64, i::Float64, d::Float64)::Float64
 #// Accurate calculation of derivative of logcf(x,i,d) wrt x, when x is small in absolute value.
-Dim n::Float64, j::Float64, tot::Float64, xtojm1::Float64, addon::Float64
+n::Float64 = convert(Float64, 0), j::Float64, tot::Float64, xtojm1::Float64, addon::Float64
 n = i + d
 tot = 1.0 / n
 j = 2.0
@@ -551,7 +551,7 @@ function  expm1old(x::Float64)::Float64
 #// Accurate calculation of exp(x)-1, particularly for small x.
 #// Uses a variation of the standard continued fraction for tanh(x) see A&S 4.5.70.
   if (abs(x) < 2)
-     Dim a1::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, x2::Float64
+     a1::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, c1::Float64, x2::Float64
      a1 = 24.0
      b1 = 2.0 * (12.0 - x * (6.0 - x))
      x2 = x * x * 0.25
@@ -586,7 +586,7 @@ end
 function  expm1(x::Float64)::Float64
 #// Accurate calculation of exp(x)-1, particularly for small x.
 #// Based on NR approach to solving log(1+result) = x
-Dim y0::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, x2::Float64
+y0::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, c1::Float64, x2::Float64
   y0 = exp(x) - 1.0
   if abs(x) < 2
      if y0 = 0.0
@@ -601,7 +601,7 @@ end
 
 function  logcf(x::Float64, i::Float64, d::Float64)::Float64
 #// Continued fraction for calculation of 1/i + x/(i+d) + x*x/(i+2*d) + x*x*x/(i+3d) + ...
-Dim a1::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64, c3::Float64, c4::Float64
+a1::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64, c3::Float64, c4::Float64
      c1 = 2.0 * d
      c2 = i + d
      c4 = c2 + d
@@ -641,7 +641,7 @@ end
 
 function  logcfplusderiv(x::Float64, i::Float64, d::Float64)::Float64
 #// Continued fraction type calculation of derivative of 1/i + x/(i+d) + x*x/(i+2*d) + x*x*x/(i+3d) + ...
-Dim a1::Float64, a2::Float64, b1::Float64, b2::Float64, a1dash::Float64, a2dash::Float64, b1dash::Float64, b2dash::Float64, c1::Float64, c2::Float64, c3::Float64, c4::Float64, c5::Float64
+a1::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, a1dash::Float64, a2dash::Float64, b1dash::Float64, b2dash::Float64, c1::Float64, c2::Float64, c3::Float64, c4::Float64, c5::Float64
      c1 = 2.0 * d
      c2 = i + d
      c4 = c2 + d
@@ -706,7 +706,7 @@ end
 
 function  log0Old(x::Float64)::Float64
 #//Accurate calculation of log(1+x), particularly for small x.
-   Dim term::Float64
+   term::Float64 = convert(Float64, 0)
    if (abs(x) > 0.5)
       log0Old = log(1.0 + x)
    else
@@ -717,7 +717,7 @@ end
 
 function  log0(x::Float64)::Float64
 #//Accurate and quicker calculation of log(1+x), particularly for small x. Code from Wolfgang Ehrhardt.
-   Dim y::Float64
+   y::Float64 = convert(Float64, 0)
    if x > 4.0
       log0 = log(1.0 + x)
    else
@@ -732,7 +732,7 @@ end
 
 function  lcc(x::Float64)::Float64
 #//Accurate calculation of log(1+x)-x, particularly for small x.
-   Dim term::Float64, y ::Float64
+   term::Float64 = convert(Float64, 0), y ::Float64
    if (abs(x) < 0.01)
       term = x / (2.0 + x)
       y = term * term
@@ -748,7 +748,7 @@ end
 
 function  log1(x::Float64)::Float64
 #//Accurate calculation of log(1+x)-x, particularly for small x.
-   Dim term::Float64, y ::Float64
+   term::Float64 = convert(Float64, 0), y ::Float64
    if (abs(x) < 0.01)
       term = x / (2.0 + x)
       y = term * term
@@ -764,7 +764,7 @@ end
 
 function  logfbitdif(x::Float64)::Float64
 #//Calculation of logfbit(x)-logfbit(1+x). x must be > -1.
-  Dim y::Float64, y2::Float64
+  y::Float64 = convert(Float64, 0), y2::Float64
   if x < -0.65
      logfbitdif = (x + 1.5) * log0(1.0 / (x + 1.0)) - 1.0
   else
@@ -776,7 +776,7 @@ end
 function  logfbita(x::Float64)::Float64
 #//Error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbita(x).
 #//Are we ever concerned about the relative error involved in this function? I don#t think so.
-  Dim x1::Float64, x2::Float64, x3::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64, x3::Float64
   if (x >= 100000000.0)
      logfbita = lfbc1 / (x + 1.0)
   elseif (x >= 6.0)                      # Abramowitz & Stegun#s series 6.1.41
@@ -812,10 +812,10 @@ function  logfbita(x::Float64)::Float64
 end
 
 function  logfbitb(x::Float64)::Float64
-    Dim lgam::Float64
-    Dim i As Integer
-    Dim m::Float64
-    Dim big::Bool
+    lgam::Float64 = convert(Float64, 0)
+    i::Int16 = convert(Int16, 0)
+    m::Float64 = convert(Float64, 0)
+    big::Bool = convert(Bool, 0)
     Call initCoeffs
     if x <= 0.5
        m = 0.0
@@ -860,7 +860,7 @@ function  logfbit(x::Float64)::Float64
 #//For x < 1.5, uses expansion of log(x!) and log((x+1)!) from Abramowitz & Stegun#s series 6.1.33
 #//We are primarily concerned about the absolute error in this function.
 #//Due to cancellation errors in calculating 1+x as x tends to -1, the function loses accuracy and should not be used!
-  Dim x1::Float64, x2::Float64, x3::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64, x3::Float64
   if (x >= 6.0)
      x1 = x + 1.0
      if (x >= 1000.0)
@@ -923,8 +923,8 @@ function  logfbit(x::Float64)::Float64
   elseif (x = -0.5)
      logfbit = 0.15342640972002734529138393927091     # 0.15342640972002734529138393927091
   elseif x >= -0.65
-    Dim lgam::Float64
-    Dim i As Integer
+    lgam::Float64 = convert(Float64, 0)
+    i::Int16 = convert(Int16, 0)
     if x <= 0.0
        Call initCoeffs
        i = UBound(coeffs)
@@ -970,8 +970,8 @@ end
 
 function  lfbaccdif1(a::Float64, b::Float64)::Float64
 #//Calculates logfbit(b)-logfbit(a+b) accurately for a > 0 & b >= 0. Reasonably accurate for a >=0 & b < 0.
-Dim x1::Float64, x2::Float64, x3::Float64, y1::Float64, y2::Float64, y3::Float64
-Dim acc::Float64, i As Integer, Start As Integer, s1::Float64, s2::Float64, tx::Float64, ty::Float64
+x1::Float64 = convert(Float64, 0), x2::Float64, x3::Float64, y1::Float64, y2::Float64, y3::Float64
+acc::Float64 = convert(Float64, 0), i::Int16, Start::Int16, s1::Float64, s2::Float64, tx::Float64, ty::Float64
   if a < 0.0
      lfbaccdif1 = -lfbaccdif1(-a, b + a)
   elseif (b >= 8.0)
@@ -1035,7 +1035,7 @@ Dim acc::Float64, i As Integer, Start As Integer, s1::Float64, s2::Float64, tx::
      lfbaccdif1 = cf_0 * (a - acc) / ((x1 + x2) * (y1 + y2))
      #lfbaccdif1 = (a - acc) / (12.0 * (x1 + x2) * (y1 + y2))
   elseif b > -1.0
-    Dim scale2::Float64, scale3::Float64
+    scale2::Float64 = convert(Float64, 0), scale3::Float64
     if b < -0.66
        if a > 1.0
           lfbaccdif1 = logfbitdif(b) + lfbaccdif1(a - 1.0, b + 1.0)
@@ -1093,7 +1093,7 @@ Dim acc::Float64, i As Integer, Start As Integer, s1::Float64, s2::Float64, tx::
 end
 
 function  logdif(pr::Float64, prob::Float64)::Float64
-   Dim temp::Float64
+   temp::Float64 = convert(Float64, 0)
    temp = (pr - prob) / prob
    if abs(temp) >= 0.5
       logdif = log(pr / prob)
@@ -1104,7 +1104,7 @@ end
 
 function  cnormal(x::Float64)::Float64
 #//Probability that a normal variate <= x
-  Dim acc::Float64, x2::Float64, d::Float64, term::Float64, a1::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64, c3::Float64
+  acc::Float64 = convert(Float64, 0), x2::Float64, d::Float64, term::Float64, a1::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64, c3::Float64
 
   if (abs(x) < 1.5)
      acc = 0.0
@@ -1172,7 +1172,7 @@ function  invcnormal(p::Float64)::Float64
 #//Inverse of cnormal from AS241.
 #//Require p to be strictly in the range 0..1
 
-   Dim PPND16::Float64, q::Float64, r::Float64
+   PPND16::Float64 = convert(Float64, 0), q::Float64, r::Float64
    q = p - 0.5
    if (abs(q) <= 0.425)
       r = 0.180625 - q * q
@@ -1198,7 +1198,7 @@ function  invcnormal(p::Float64)::Float64
    invcnormal = PPND16
 end
 
-function pdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
+function  pdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
    if (sd <= 0.0)
       pdf_lognormal = [#VALUE!]
    else
@@ -1206,7 +1206,7 @@ function pdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
    end
 end
 
-function cdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
+function  cdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
    if (sd <= 0.0)
       cdf_lognormal = [#VALUE!]
    else
@@ -1214,7 +1214,7 @@ function cdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
    end
 end
 
-function comp_cdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
+function  comp_cdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
    if (sd <= 0.0)
       comp_cdf_lognormal = [#VALUE!]
    else
@@ -1222,7 +1222,7 @@ function comp_cdf_lognormal(x::Float64, mean::Float64, sd::Float64)::Float64
    end
 end
 
-function inv_lognormal(prob::Float64, mean::Float64, sd::Float64)::Float64
+function  inv_lognormal(prob::Float64, mean::Float64, sd::Float64)::Float64
    if (prob <= 0.0 || prob >= 1.0 || sd <= 0.0)
       inv_lognormal = [#VALUE!]
    else
@@ -1230,7 +1230,7 @@ function inv_lognormal(prob::Float64, mean::Float64, sd::Float64)::Float64
    end
 end
 
-function comp_inv_lognormal(prob::Float64, mean::Float64, sd::Float64)::Float64
+function  comp_inv_lognormal(prob::Float64, mean::Float64, sd::Float64)::Float64
    if (prob <= 0.0 || prob >= 1.0 || sd <= 0.0)
       comp_inv_lognormal = [#VALUE!]
    else
@@ -1241,9 +1241,9 @@ end
 function  tdistexp(p::Float64, q::Float64, logqk2::Float64, k::Float64, ByRef tdistDensity::Float64)::Float64
 #//Special transformation of t-distribution useful for BinApprox.
 #//Note approxtdistDens only used by binApprox if k > 100 or so.
-   Dim sum::Float64, aki::Float64, ai::Float64, term::Float64, q1::Float64, q8::Float64
-   Dim c1::Float64, c2::Float64, a1::Float64, a2::Float64, b1::Float64, b2::Float64, cadd::Float64
-   Dim result::Float64, approxtdistDens::Float64
+   sum::Float64 = convert(Float64, 0), aki::Float64, ai::Float64, term::Float64, q1::Float64, q8::Float64
+   c1::Float64 = convert(Float64, 0), c2::Float64, a1::Float64, a2::Float64, b1::Float64, b2::Float64, cadd::Float64
+   result::Float64 = convert(Float64, 0), approxtdistDens::Float64
 
    approxtdistDens = exp(logqk2 + logfbit(k - 1.0) - 2.0 * logfbit(k * 0.5 - 1.0)) * OneOverSqrTwoPi
 
@@ -1311,7 +1311,7 @@ end
 
 function  tdist(x::Float64, k::Float64, tdistDensity::Float64)::Float64
 #//Probability that variate from t-distribution with k degress of freedom <= x
-   Dim x2::Float64, k2::Float64, logterm::Float64, a::Float64, r::Float64, c5::Float64
+   x2::Float64 = convert(Float64, 0), k2::Float64, logterm::Float64, a::Float64, r::Float64, c5::Float64
 
    if abs(x) >= min(1.0, k)
       k2 = k / x
@@ -1387,7 +1387,7 @@ end
 function  invtdist(prob::Float64, df::Float64)::Float64
 #//Inverse of tdist
 #//Require prob to be in the range 0..1 df should be positive
-  Dim xn::Float64, xn2::Float64, tp::Float64, tpDif::Float64, tprob::Float64, a::Float64, pr::Float64, lpr::Float64, small::Float64, smalllpr::Float64, tdistDensity::Float64
+  xn::Float64 = convert(Float64, 0), xn2::Float64, tp::Float64, tpDif::Float64, tprob::Float64, a::Float64, pr::Float64, lpr::Float64, small::Float64, smalllpr::Float64, tdistDensity::Float64
   if prob > 0.5
      pr = 1.0 - prob
   else
@@ -1451,8 +1451,8 @@ end
 
 function  poissonTerm(i::Float64, n::Float64, diffFromMean::Float64, logAdd::Float64)::Float64
 #//Probability that poisson variate with mean n has value i (diffFromMean = n-i)
-   Dim c2::Float64, c3::Float64
-   Dim logpoissonTerm::Float64, c1::Float64
+   c2::Float64 = convert(Float64, 0), c3::Float64
+   logpoissonTerm::Float64 = convert(Float64, 0), c1::Float64
 
    if ((i <= -1.0) || (n < 0.0))
       if (i = 0.0)
@@ -1491,7 +1491,7 @@ function  poisson1(i::Float64, n::Float64, diffFromMean::Float64)::Float64
 #//For negative values of i (used for calculating the cumlative gamma distribution) there#s a really nasty interpretation!
 #//1-gamma(n,i) is calculated as poisson1(-i,n,0) since we need an accurate version of i rather than i-1.
 #//Uses a simplified version of Legendre#s continued fraction.
-   Dim prob::Float64, exact::Bool
+   prob::Float64 = convert(Float64, 0), exact::Bool
    if ((i >= 0.0) && (n <= 0.0))
       exact = true
       prob = 1.0
@@ -1513,9 +1513,9 @@ function  poisson1(i::Float64, n::Float64, diffFromMean::Float64)::Float64
       Exit Function
    end
 
-   Dim a1::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64, c3::Float64, c4::Float64, cfValue::Float64
-   Dim njj As Long, numb As Long
-   Dim sumAlways As Long, sumFactor As Long
+   a1::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64, c3::Float64, c4::Float64, cfValue::Float64
+   njj::Int32 = convert(Int32, 0), numb::Int32
+   sumAlways::Int32 = convert(Int32, 0), sumFactor::Int32
    sumAlways = 0
    sumFactor = 6
    a1 = 0.0
@@ -1578,7 +1578,7 @@ end
 
 function  poisson2(i::Float64, n::Float64, diffFromMean::Float64)::Float64
 #//Probability that poisson variate with mean n has value >= i (diffFromMean = n-i)
-   Dim prob::Float64, exact::Bool
+   prob::Float64 = convert(Float64, 0), exact::Bool
    if ((i <= 0.0) && (n <= 0.0))
       exact = true
       prob = 1.0
@@ -1591,8 +1591,8 @@ function  poisson2(i::Float64, n::Float64, diffFromMean::Float64)::Float64
       Exit Function
    end
 
-   Dim a1::Float64, a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64
-   Dim njj As Long, numb As Long
+   a1::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, c1::Float64, c2::Float64
+   njj::Int32 = convert(Int32, 0), numb::Int32
    const sumFactor = 6
    numb = Int(sumFactor * exp(log(n) / 3))
    numb = max(0, Int(diffFromMean + numb))
@@ -1637,9 +1637,9 @@ end
 function  poissonApprox(j::Float64, diffFromMean::Float64, comp::Bool)::Float64
 #//Asymptotic expansion to calculate the probability that poisson variate has value <= j (diffFromMean = mean-j). if comp then calulate 1-probability.
 #//cf. http://members.aol.com/iandjmsmith/PoissonApprox.htm
-Dim pt::Float64, s2pt::Float64, res1::Float64, res2::Float64, elfb::Float64, term::Float64
-Dim ig2::Float64, ig3::Float64, ig4::Float64, ig5::Float64, ig6::Float64, ig7::Float64, ig8::Float64
-Dim ig05::Float64, ig25::Float64, ig35::Float64, ig45::Float64, ig55::Float64, ig65::Float64, ig75::Float64
+pt::Float64 = convert(Float64, 0), s2pt::Float64, res1::Float64, res2::Float64, elfb::Float64, term::Float64
+ig2::Float64 = convert(Float64, 0), ig3::Float64, ig4::Float64, ig5::Float64, ig6::Float64, ig7::Float64, ig8::Float64
+ig05::Float64 = convert(Float64, 0), ig25::Float64, ig35::Float64, ig45::Float64, ig55::Float64, ig65::Float64, ig75::Float64
 
 pt = -log1(diffFromMean / j)
 s2pt = abs2(2.0 * j * pt)
@@ -1719,7 +1719,7 @@ function  invpoisson(k::Float64, prob::Float64)::Float64
    elseif (prob > 0.5)
       invpoisson = invcomppoisson(k, 1.0 - prob)
    else #/*if (k > 0.0)*/ then
-      Dim temp2::Float64, xp::Float64, dfm::Float64, q::Float64, qdif::Float64, lpr::Float64, small::Float64, smalllpr::Float64
+      temp2::Float64 = convert(Float64, 0), xp::Float64, dfm::Float64, q::Float64, qdif::Float64, lpr::Float64, small::Float64, smalllpr::Float64
       lpr = -log(prob)
       small = 0.00000000000001
       smalllpr = small * lpr * prob
@@ -1769,7 +1769,7 @@ function  invcomppoisson(k::Float64, prob::Float64)::Float64
    elseif (k = 0.0)
       invcomppoisson = -log0(-prob)
    else #/*if (k > 0.0)*/ then
-      Dim temp2::Float64, xp::Float64, dfm::Float64, q::Float64, qdif::Float64, lambda::Float64, qdifset::Bool, lpr::Float64, small::Float64, smalllpr::Float64
+      temp2::Float64 = convert(Float64, 0), xp::Float64, dfm::Float64, q::Float64, qdif::Float64, lambda::Float64, qdifset::Bool, lpr::Float64, small::Float64, smalllpr::Float64
       lpr = -log(prob)
       small = 0.00000000000001
       smalllpr = small * lpr * prob
@@ -1839,8 +1839,8 @@ end
 
 function  binomialTerm(i::Float64, j::Float64, p::Float64, q::Float64, diffFromMean::Float64, logAdd::Float64)::Float64
 #//Probability that binomial variate with sample size i+j and event prob p (=1-q) has value i (diffFromMean = (i+j)*p-i)
-   Dim c1::Float64, c2::Float64, c3::Float64
-   Dim c4::Float64, c5::Float64, c6::Float64, ps::Float64, logbinomialTerm::Float64, dfm::Float64
+   c1::Float64 = convert(Float64, 0), c2::Float64, c3::Float64
+   c4::Float64 = convert(Float64, 0), c5::Float64, c6::Float64, ps::Float64, logbinomialTerm::Float64, dfm::Float64
    if ((i = 0.0) && (j <= 0.0))
       binomialTerm = exp(logAdd)
    elseif ((i <= -1.0) || (j < 0.0))
@@ -1887,10 +1887,10 @@ end
 
 function  binomialcf(ii::Float64, jj::Float64, pp::Float64, qq::Float64, diffFromMean::Float64, comp::Bool)::Float64
 #//Probability that binomial variate with sample size ii+jj and event prob pp (=1-qq) has value <=i (diffFromMean = (ii+jj)*pp-ii). if comp the returns 1 - probability.
-Dim prob::Float64, p::Float64, q::Float64, a1::Float64, a2::Float64, b1::Float64, b2::Float64
-Dim c1::Float64, c2::Float64, c3::Float64, c4::Float64, n1::Float64, q1::Float64, dfm::Float64
-Dim i::Float64, j::Float64, ni::Float64, nj::Float64, numb::Float64, ip1::Float64, cfValue::Float64
-Dim swapped::Bool, exact::Bool
+prob::Float64 = convert(Float64, 0), p::Float64, q::Float64, a1::Float64, a2::Float64, b1::Float64, b2::Float64
+c1::Float64 = convert(Float64, 0), c2::Float64, c3::Float64, c4::Float64, n1::Float64, q1::Float64, dfm::Float64
+i::Float64 = convert(Float64, 0), j::Float64, ni::Float64, nj::Float64, numb::Float64, ip1::Float64, cfValue::Float64
+swapped::Bool = convert(Bool, 0), exact::Bool
 
   if ((ii > -1.0) && (ii < 0.0))
      ip1 = -ii
@@ -1909,7 +1909,7 @@ Dim swapped::Bool, exact::Bool
      cfValue = cfSmall
      swapped = n1 * pp <= ii + 2.0
   end
-  if Not swapped
+  if !swapped
     i = ii
     j = jj
     p = pp
@@ -1943,7 +1943,7 @@ Dim swapped::Bool, exact::Bool
      Exit Function
   end
 
-  Dim sumAlways As Long, sumFactor As Long
+  sumAlways::Int32 = convert(Int32, 0), sumFactor::Int32
   sumAlways = 0
   sumFactor = 6
   a1 = 0.0
@@ -2019,13 +2019,13 @@ end
 function  binApprox(a::Float64, b::Float64, diffFromMean::Float64, comp::Bool)::Float64
 #//Asymptotic expansion to calculate the probability that binomial variate has value <= a (diffFromMean = (a+b)*p-a). if comp then calulate 1-probability.
 #//cf. http://members.aol.com/iandjmsmith/BinomialApprox.htm
-Dim n::Float64, n1::Float64
-Dim pq1::Float64, mfac::Float64, res::Float64, tp::Float64, lval::Float64, lvv::Float64, temp::Float64
-Dim ib05::Float64, ib15::Float64, ib25::Float64, ib35::Float64, ib45::Float64, ib55::Float64, ib65::Float64
-Dim ib2::Float64, ib3::Float64, ib4::Float64, ib5::Float64, ib6::Float64, ib7::Float64
-Dim elfb::Float64, coef15::Float64, coef25::Float64, coef35::Float64, coef45::Float64, coef55::Float64, coef65::Float64
-Dim coef2::Float64, coef3::Float64, coef4::Float64, coef5::Float64, coef6::Float64, coef7::Float64
-Dim tdistDensity::Float64, approxtdistDens::Float64
+n::Float64 = convert(Float64, 0), n1::Float64
+pq1::Float64 = convert(Float64, 0), mfac::Float64, res::Float64, tp::Float64, lval::Float64, lvv::Float64, temp::Float64
+ib05::Float64 = convert(Float64, 0), ib15::Float64, ib25::Float64, ib35::Float64, ib45::Float64, ib55::Float64, ib65::Float64
+ib2::Float64 = convert(Float64, 0), ib3::Float64, ib4::Float64, ib5::Float64, ib6::Float64, ib7::Float64
+elfb::Float64 = convert(Float64, 0), coef15::Float64, coef25::Float64, coef35::Float64, coef45::Float64, coef55::Float64, coef65::Float64
+coef2::Float64 = convert(Float64, 0), coef3::Float64, coef4::Float64, coef5::Float64, coef6::Float64, coef7::Float64
+tdistDensity::Float64 = convert(Float64, 0), approxtdistDens::Float64
 
 n = a + b
 n1 = n + 1.0
@@ -2127,7 +2127,7 @@ end
 
 function  binomial(ii::Float64, jj::Float64, pp::Float64, qq::Float64, diffFromMean::Float64)::Float64
 #//Probability that binomial variate with sample size ii+jj and event prob pp (=1-qq) has value <=i (diffFromMean = (ii+jj)*pp-ii).
-   Dim mij::Float64
+   mij::Float64 = convert(Float64, 0)
    mij = min(ii, jj)
    if ((mij > 50.0) && (abs(diffFromMean) < (0.1 * mij)))
       binomial = binApprox(jj - 1.0, ii, diffFromMean, false)
@@ -2138,7 +2138,7 @@ end
 
 function  compbinomial(ii::Float64, jj::Float64, pp::Float64, qq::Float64, diffFromMean::Float64)::Float64
 #//Probability that binomial variate with sample size ii+jj and event prob pp (=1-qq) has value >i (diffFromMean = (ii+jj)*pp-ii).
-   Dim mij::Float64
+   mij::Float64 = convert(Float64, 0)
    mij = min(ii, jj)
    if ((mij > 50.0) && (abs(diffFromMean) < (0.1 * mij)))
        compbinomial = binApprox(jj - 1.0, ii, diffFromMean, true)
@@ -2151,7 +2151,7 @@ function  invbinom(k::Float64, m::Float64, prob::Float64, ByRef oneMinusP::Float
 #//Inverse of binomial. Delivers event probability p (q held in oneMinusP in case required) so that binomial(k,m,p,oneMinusp,dfm) = prob.
 #//Note that dfm is calculated accurately but never made available outside of this routine.
 #//Require prob to be in the range 0..1, m should be positive and k should be >= 0
-   Dim temp1::Float64, temp2::Float64
+   temp1::Float64 = convert(Float64, 0), temp2::Float64
    if (prob > 0.5)
       temp2 = invcompbinom(k, m, 1.0 - prob, oneMinusP)
    else
@@ -2166,7 +2166,7 @@ function  invcompbinom(k::Float64, m::Float64, prob::Float64, ByRef oneMinusP::F
 #//Inverse of compbinomial. Delivers event probability p (q held in oneMinusP in case required) so that compbinomial(k,m,p,oneMinusp,dfm) = prob.
 #//Note that dfm is calculated accurately but never made available outside of this routine.
 #//Require prob to be in the range 0..1, m should be positive and k should be >= -0.5
-Dim xp::Float64, xp2::Float64, dfm::Float64, n::Float64, p::Float64, q::Float64, pr::Float64, dif::Float64, temp::Float64, temp2::Float64, result::Float64, lpr::Float64, small::Float64, smalllpr::Float64, nminpq::Float64
+xp::Float64 = convert(Float64, 0), xp2::Float64, dfm::Float64, n::Float64, p::Float64, q::Float64, pr::Float64, dif::Float64, temp::Float64, temp2::Float64, result::Float64, lpr::Float64, small::Float64, smalllpr::Float64, nminpq::Float64
    result = -1.0
    n = k + m
    if (prob > 0.5)
@@ -2260,7 +2260,7 @@ Dim xp::Float64, xp2::Float64, dfm::Float64, n::Float64, p::Float64, q::Float64,
 end
 
 function  abMinuscd(a::Float64, b::Float64, c::Float64, d::Float64)::Float64
-   Dim a1::Float64, b1::Float64, c1::Float64, d1::Float64, a2::Float64, b2::Float64, c2::Float64, d2::Float64, r1::Float64, r2::Float64, r2a::Float64, r3::Float64
+   a1::Float64 = convert(Float64, 0), b1::Float64, c1::Float64, d1::Float64, a2::Float64, b2::Float64, c2::Float64, d2::Float64, r1::Float64, r2::Float64, r2a::Float64, r3::Float64
    a2 = Int(a / twoTo27) * twoTo27
    a1 = a - a2
    b2 = Int(b / twoTo27) * twoTo27
@@ -2280,7 +2280,7 @@ function  abMinuscd(a::Float64, b::Float64, c::Float64, d::Float64)::Float64
    end
 end
 
-function  aTimes2Powerb(a::Float64, b As Integer)::Float64
+function  aTimes2Powerb(a::Float64, b::Int16)::Float64
    if b > 709
       a = (a * scalefactor) * scalefactor
       b = b - 512
@@ -2292,8 +2292,8 @@ function  aTimes2Powerb(a::Float64, b As Integer)::Float64
 end
 
 function  GeneralabMinuscd(a::Float64, b::Float64, c::Float64, d::Float64)::Float64
-   Dim s::Float64, ca::Float64, cb::Float64, cc::Float64, cd::Float64
-   Dim l2 As Integer, pa As Integer, pb As Integer, pc As Integer, pd As Integer
+   s::Float64 = convert(Float64, 0), ca::Float64, cb::Float64, cc::Float64, cd::Float64
+   l2::Int16 = convert(Int16, 0), pa::Int16, pb::Int16, pc::Int16, pd::Int16
    s = a * b - c * d
    if a <= 0.0 || b <= 0.0 || c <= 0.0 || d <= 0.0
       GeneralabMinuscd = s
@@ -2318,9 +2318,9 @@ end
 
 function  hypergeometricTerm(ai::Float64, aji::Float64, aki::Float64, amkji::Float64)::Float64
 #// Probability that hypergeometric variate from a population with total type Is of aki+ai, total type IIs of amkji+aji, has ai type Is and aji type IIs selected.
-   Dim aj::Float64, am::Float64, ak::Float64, amj::Float64, amk::Float64
-   Dim cjkmi::Float64, ai1::Float64, aj1::Float64, ak1::Float64, am1::Float64, aki1::Float64, aji1::Float64, amk1::Float64, amj1::Float64, amkji1::Float64
-   Dim c1::Float64, c3::Float64, c4::Float64, c5::Float64, loghypergeometricTerm::Float64
+   aj::Float64 = convert(Float64, 0), am::Float64, ak::Float64, amj::Float64, amk::Float64
+   cjkmi::Float64 = convert(Float64, 0), ai1::Float64, aj1::Float64, ak1::Float64, am1::Float64, aki1::Float64, aji1::Float64, amk1::Float64, amj1::Float64, amkji1::Float64
+   c1::Float64 = convert(Float64, 0), c3::Float64, c4::Float64, c5::Float64, loghypergeometricTerm::Float64
 
    ak = aki + ai
    amk = amkji + aji
@@ -2391,11 +2391,11 @@ end
 
 function  hypergeometric(ai::Float64, aji::Float64, aki::Float64, amkji::Float64, comp::Bool, ByRef ha1::Float64, ByRef hprob::Float64, ByRef hswap::Bool)::Float64
 #// Probability that hypergeometric variate from a population with total type Is of aki+ai, total type IIs of amkji+aji, has up to ai type Is selected in a sample of size aji+ai.
-     Dim prob::Float64
-     Dim a1::Float64, a2::Float64, b1::Float64, b2::Float64, an::Float64, bn::Float64, bnAdd::Float64, s::Float64
-     Dim c1::Float64, c2::Float64, c3::Float64, c4::Float64
-     Dim i::Float64, ji::Float64, ki::Float64, mkji::Float64, njj::Float64, numb::Float64, maxSums::Float64, swapped::Bool
-     Dim ip1::Float64, must_do_cf::Bool, allIntegral::Bool, exact::Bool
+     prob::Float64 = convert(Float64, 0)
+     a1::Float64 = convert(Float64, 0), a2::Float64, b1::Float64, b2::Float64, an::Float64, bn::Float64, bnAdd::Float64, s::Float64
+     c1::Float64 = convert(Float64, 0), c2::Float64, c3::Float64, c4::Float64
+     i::Float64 = convert(Float64, 0), ji::Float64, ki::Float64, mkji::Float64, njj::Float64, numb::Float64, maxSums::Float64, swapped::Bool
+     ip1::Float64 = convert(Float64, 0), must_do_cf::Bool, allIntegral::Bool, exact::Bool
      if (amkji > -1.0) && (amkji < 0.0)
         ip1 = -amkji
         mkji = ip1 - 1.0
@@ -2421,7 +2421,7 @@ function  hypergeometric(ai::Float64, aji::Float64, aki::Float64, amkji::Float64
      else
         swapped = (ai + 0.5) * (mkji + 0.5) >= (aki - 0.5) * (aji - 0.5)
      end
-     if Not swapped
+     if !swapped
        i = ai
        ji = aji
        ki = aki
@@ -2466,7 +2466,7 @@ function  hypergeometric(ai::Float64, aji::Float64, aki::Float64, amkji::Float64
      end
 
      a1 = 0.0
-     Dim sumAlways As Long, sumFactor As Long
+     sumAlways::Int32 = convert(Int32, 0), sumFactor::Int32
      sumAlways = 0.0
      sumFactor = 10.0
 
@@ -2578,7 +2578,7 @@ function  compgfunc(x::Float64, a::Float64)::Float64
 #//Calculates a*x(1/(a+1) - x/2*(1/(a+2) - x/3*(1/(a+3) - ...)))
 #//Mainly for calculating the complement of gamma(x,a) for small a and x <= 1.
 #//a should be close to 0, x >= 0 & x <=1
-  Dim term::Float64, d::Float64, sum::Float64
+  term::Float64 = convert(Float64, 0), d::Float64, sum::Float64
   term = x
   d = 2.0
   sum = term / (a + 1.0)
@@ -2595,9 +2595,9 @@ function  lngammaexpansion(a::Float64)::Float64
 #//Uses Abramowitz & Stegun#s series 6.1.33
 #//Mainly for calculating the complement of gamma(x,a) for small a and x <= 1.
 #//
-Dim lgam::Float64
-Dim i As Integer
-Dim big::Bool
+lgam::Float64 = convert(Float64, 0)
+i::Int16 = convert(Int16, 0)
+big::Bool = convert(Bool, 0)
 Call initCoeffs
 big = a > 0.5
 if (big)
@@ -2611,14 +2611,14 @@ For i = UBound(coeffs) - 1 To 0 Step -1
    lgam = (coeffs(i) - a * lgam)
 Next i
 lngammaexpansion = (a * lgam + OneMinusEulers_const) * a
-if Not big
+if !big
    lngammaexpansion = lngammaexpansion - log0(a)
 end
 end
 
 function  incgamma(x::Float64, a::Float64, comp::Bool)::Float64
 #//Calculates gamma-cdf for small a (complementary gamma-cdf if comp).
-   Dim r::Float64
+   r::Float64 = convert(Float64, 0)
    r = a * log(x) - lngammaexpansion(a)
    if (comp)
       r = -expm1(r)
@@ -2630,7 +2630,7 @@ end
 
 function  invincgamma(a::Float64, prob::Float64, comp::Bool)::Float64
 #//Calculates inverse of gamma for small a (inverse of complementary gamma if comp).
-Dim ga::Float64, x::Float64, deriv::Float64, z::Float64, w::Float64, dif::Float64, pr::Float64, lpr::Float64, small::Float64, smalllpr::Float64
+ga::Float64 = convert(Float64, 0), x::Float64, deriv::Float64, z::Float64, w::Float64, dif::Float64, pr::Float64, lpr::Float64, small::Float64, smalllpr::Float64
    if (prob > 0.5)
        invincgamma = invincgamma(a, 1.0 - prob, !comp)
        Exit Function
@@ -2745,11 +2745,11 @@ end
 
 function  logfbit1(x::Float64)::Float64
 #// Derivative of error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbit(x).
-  Dim x1::Float64, x2::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64
   if (x >= 10000000000.0)
      logfbit1 = -lfbc1 * ((x + 1.0) ^ -2)
   elseif (x >= 7.0)
-     Dim x3::Float64
+     x3::Float64 = convert(Float64, 0)
      x1 = x + 1.0
      x2 = 1.0 / (x1 * x1)
      x3 = (11.0 * lfbc6 - x2 * (13.0 * lfbc7 - x2 * (15.0 * lfbc8 - x2 * 17.0 * lfbc9)))
@@ -2776,11 +2776,11 @@ end
 
 function  logfbit2(x::Float64)::Float64
 #// Second derivative of error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbit(x).
-  Dim x1::Float64, x2::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64
   if (x >= 10000000000.0)
      logfbit2 = 2.0 * lfbc1 * ((x + 1.0) ^ -3)
   elseif (x >= 7.0)
-     Dim x3::Float64
+     x3::Float64 = convert(Float64, 0)
      x1 = x + 1.0
      x2 = 1.0 / (x1 * x1)
      x3 = x2 * (240.0 * lfbc8 - x2 * 306.0 * lfbc9)
@@ -2808,11 +2808,11 @@ end
 
 function  logfbit3(x::Float64)::Float64
 #// Third derivative of error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbit(x).
-  Dim x1::Float64, x2::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64
   if (x >= 10000000000.0)
      logfbit3 = -0.5 * ((x + 1.0) ^ -4)
   elseif (x >= 7.0)
-     Dim x3::Float64
+     x3::Float64 = convert(Float64, 0)
      x1 = x + 1.0
      x2 = 1.0 / (x1 * x1)
      x3 = x2 * (4080.0 * lfbc8 - x2 * 5814.0 * lfbc9)
@@ -2840,11 +2840,11 @@ end
 
 function  logfbit4(x::Float64)::Float64
 #// Fourth derivative of error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbit(x).
-  Dim x1::Float64, x2::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64
   if (x >= 10000000000.0)
      logfbit4 = -0.5 * ((x + 1.0) ^ -4)
   elseif (x >= 7.0)
-     Dim x3::Float64
+     x3::Float64 = convert(Float64, 0)
      x1 = x + 1.0
      x2 = 1.0 / (x1 * x1)
      x3 = x2 * (73440.0 * lfbc8 - x2 * 116280.0 * lfbc9)
@@ -2872,11 +2872,11 @@ end
 
 function  logfbit5(x::Float64)::Float64
 #// Fifth derivative of error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbit(x).
-  Dim x1::Float64, x2::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64
   if (x >= 10000000000.0)
      logfbit5 = -10.0 * ((x + 1.0) ^ -6)
   elseif (x >= 7.0)
-     Dim x3::Float64
+     x3::Float64 = convert(Float64, 0)
      x1 = x + 1.0
      x2 = 1.0 / (x1 * x1)
      x3 = x2 * (1395360.0 * lfbc8 - x2 * 2441880.0 * lfbc9)
@@ -2904,11 +2904,11 @@ end
 
 function  logfbit7(x::Float64)::Float64
 #// Seventh derivative of error part of Stirling#s formula where log(x!) = log(sqrt(twopi))+(x+0.5)*log(x+1)-(x+1)+logfbit(x).
-  Dim x1::Float64, x2::Float64
+  x1::Float64 = convert(Float64, 0), x2::Float64
   if (x >= 10000000000.0)
      logfbit7 = -420.0 * ((x + 1.0) ^ -8)
   elseif (x >= 7.0)
-     Dim x3::Float64
+     x3::Float64 = convert(Float64, 0)
      x1 = x + 1.0
      x2 = 1.0 / (x1 * x1)
      x3 = x2 * (586051200.0 * lfbc8 - x2 * 1235591280.0 * lfbc9)
@@ -2934,7 +2934,7 @@ function  lfbaccdif(a::Float64, b::Float64)::Float64
    if (a > 0.025 * (a + b + 1.0))
       lfbaccdif = logfbit(a + b) - logfbit(b)
    else
-      Dim a2::Float64, ab2::Float64
+      a2::Float64 = convert(Float64, 0), ab2::Float64
       a2 = a * a
       ab2 = a / 2.0 + b
       lfbaccdif = a * (logfbit1(ab2) + a2 / 24.0 * (logfbit3(ab2) + a2 / 80.0 * (logfbit5(ab2) + a2 / 168.0 * logfbit7(ab2))))
@@ -2945,7 +2945,7 @@ function  compbfunc(x::Float64, a::Float64, b::Float64)::Float64
 #// Calculates a*(b-1)*x(1/(a+1) - (b-2)*x/2*(1/(a+2) - (b-3)*x/3*(1/(a+3) - ...)))
 #// Mainly for calculating the complement of beta(x,a,b) for small a and b*x < 1.
 #// a should be close to 0, x >= 0 & x <=1 & b*x < 1
-  Dim term::Float64, d::Float64, sum::Float64
+  term::Float64 = convert(Float64, 0), d::Float64, sum::Float64
   term = x
   d = 2.0
   sum = term / (a + 1.0)
@@ -2959,7 +2959,7 @@ end
 
 function  incbeta(x::Float64, a::Float64, b::Float64, comp::Bool)::Float64
 #// Calculates beta for small a (complementary beta if comp).
-   Dim r::Float64
+   r::Float64 = convert(Float64, 0)
    if (x > 0.5)
       incbeta = incbeta(1.0 - x, b, a, !comp)
    else
@@ -3031,7 +3031,7 @@ end
 
 function  invincbeta(a::Float64, b::Float64, prob::Float64, comp::Bool, ByRef oneMinusP::Float64)::Float64
 #// Calculates inverse of beta for small a (inverse of complementary beta if comp).
-Dim r::Float64, rb::Float64, x::Float64, OneOverDeriv::Float64, dif::Float64, pr::Float64, mnab::Float64, aplusbOvermxab::Float64, lpr::Float64, small::Float64, smalllpr::Float64
+r::Float64 = convert(Float64, 0), rb::Float64, x::Float64, OneOverDeriv::Float64, dif::Float64, pr::Float64, mnab::Float64, aplusbOvermxab::Float64, lpr::Float64, small::Float64, smalllpr::Float64
    if (Not comp && prob > b / (a + b))
        invincbeta = invincbeta(a, b, 1.0 - prob, !comp, oneMinusP)
        Exit Function
@@ -3191,7 +3191,7 @@ Dim r::Float64, rb::Float64, x::Float64, OneOverDeriv::Float64, dif::Float64, pr
 end
 
 function  invbeta(a::Float64, b::Float64, prob::Float64, ByRef oneMinusP::Float64)::Float64
-   Dim swap::Float64
+   swap::Float64 = convert(Float64, 0)
    if (prob = 0.0)
       oneMinusP = 1.0
       invbeta = 0.0
@@ -3219,7 +3219,7 @@ function  invbeta(a::Float64, b::Float64, prob::Float64, ByRef oneMinusP::Float6
 end
 
 function  invcompbeta(a::Float64, b::Float64, prob::Float64, ByRef oneMinusP::Float64)::Float64
-   Dim swap::Float64
+   swap::Float64 = convert(Float64, 0)
    if (prob = 0.0)
       oneMinusP = 0.0
       invcompbeta = 1.0
@@ -3252,8 +3252,8 @@ function  critpoiss(mean::Float64, cprob::Float64)::Float64
       critpoiss = critcomppoiss(mean, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, dfm::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, dfm::Float64
+   i::Float64 = convert(Float64, 0)
    dfm = invcnormal(cprob) * abs2(mean)
    i = Int(mean + dfm + 0.5)
    while (true)
@@ -3281,7 +3281,7 @@ function  critpoiss(mean::Float64, cprob::Float64)::Float64
          end
 
          i = i - 1.0
-         Dim temp::Float64, temp2::Float64
+         temp::Float64 = convert(Float64, 0), temp2::Float64
          temp = (pr - cprob) / tpr
          if (temp > 10)
             temp = Int(temp + 0.5)
@@ -3346,8 +3346,8 @@ function  critcomppoiss(mean::Float64, cprob::Float64)::Float64
       critcomppoiss = critpoiss(mean, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, dfm::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, dfm::Float64
+   i::Float64 = convert(Float64, 0)
    dfm = invcnormal(cprob) * abs2(mean)
    i = Int(mean - dfm + 0.5)
    while (true)
@@ -3374,7 +3374,7 @@ function  critcomppoiss(mean::Float64, cprob::Float64)::Float64
                critcomppoiss = i
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10)
                temp = Int(temp + 0.5)
@@ -3434,8 +3434,8 @@ function  critbinomial(n::Float64, eprob::Float64, cprob::Float64)::Float64
       critbinomial = critcompbinomial(n, eprob, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, dfm::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, dfm::Float64
+   i::Float64 = convert(Float64, 0)
    dfm = invcnormal(cprob) * abs2(n * eprob * (1.0 - eprob))
    i = n * eprob + dfm
    while (true)
@@ -3476,7 +3476,7 @@ function  critbinomial(n::Float64, eprob::Float64, cprob::Float64)::Float64
                critbinomial = i
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10.0)
                temp = Int(temp + 0.5)
@@ -3538,8 +3538,8 @@ function  critcompbinomial(n::Float64, eprob::Float64, cprob::Float64)::Float64
       critcompbinomial = critbinomial(n, eprob, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, dfm::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, dfm::Float64
+   i::Float64 = convert(Float64, 0)
    dfm = invcnormal(cprob) * abs2(n * eprob * (1.0 - eprob))
    i = n * eprob - dfm
    while (true)
@@ -3571,7 +3571,7 @@ function  critcompbinomial(n::Float64, eprob::Float64, cprob::Float64)::Float64
                critcompbinomial = i
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10.0)
                temp = Int(temp + 0.5)
@@ -3629,15 +3629,15 @@ end
 
 function  crithyperg(j::Float64, k::Float64, m::Float64, cprob::Float64)::Float64
 #//i such that Pr(hypergeometric(i,j,k,m)) >= cprob and  Pr(hypergeometric(i-1,j,k,m)) < cprob
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
    if (cprob > 0.5)
       crithyperg = critcomphyperg(j, k, m, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0)
    i = j * k / m + invcnormal(cprob) * abs2(j * k * (m - j) * (m - k) / (m * m * (m - 1.0)))
-   Dim mx::Float64, mn ::Float64
+   mx::Float64 = convert(Float64, 0), mn ::Float64
    mx = min(j, k)
    mn = max(0, j + k - m)
    while (true)
@@ -3677,7 +3677,7 @@ function  crithyperg(j::Float64, k::Float64, m::Float64, cprob::Float64)::Float6
                crithyperg = mn
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10)
                temp = Int(temp + 0.5)
@@ -3731,15 +3731,15 @@ end
 
 function  critcomphyperg(j::Float64, k::Float64, m::Float64, cprob::Float64)::Float64
 #//i such that 1-Pr(hypergeometric(i,j,k,m)) > cprob and  1-Pr(hypergeometric(i-1,j,k,m)) <= cprob
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
    if (cprob > 0.5)
       critcomphyperg = crithyperg(j, k, m, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0)
    i = j * k / m - invcnormal(cprob) * abs2(j * k * (m - j) * (m - k) / (m * m * (m - 1.0)))
-   Dim mx::Float64, mn ::Float64
+   mx::Float64 = convert(Float64, 0), mn ::Float64
    mx = min(j, k)
    mn = max(0, j + k - m)
    while (true)
@@ -3769,7 +3769,7 @@ function  critcomphyperg(j::Float64, k::Float64, m::Float64, cprob::Float64)::Fl
                critcomphyperg = i
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10)
                temp = Int(temp + 0.5)
@@ -3827,8 +3827,8 @@ function  critnegbinom(n::Float64, eprob::Float64, fprob::Float64, cprob::Float6
       critnegbinom = critcompnegbinom(n, eprob, fprob, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, dfm::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, dfm::Float64
+   i::Float64 = convert(Float64, 0)
    i = invgamma(n * fprob, cprob) / eprob
    while (true)
       if (i < 0.0)
@@ -3874,7 +3874,7 @@ function  critnegbinom(n::Float64, eprob::Float64, fprob::Float64, cprob::Float6
                critnegbinom = i
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10.0)
                temp = Int(temp + 0.5)
@@ -3947,8 +3947,8 @@ function  critcompnegbinom(n::Float64, eprob::Float64, fprob::Float64, cprob::Fl
       critcompnegbinom = critnegbinom(n, eprob, fprob, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, dfm::Float64
-   Dim i::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, dfm::Float64
+   i::Float64 = convert(Float64, 0)
    i = invcompgamma(n * fprob, cprob) / eprob
    while (true)
       if (i < 0.0)
@@ -3990,7 +3990,7 @@ function  critcompnegbinom(n::Float64, eprob::Float64, fprob::Float64, cprob::Fl
                end
                Exit Function
             end
-            Dim temp::Float64, temp2::Float64
+            temp::Float64 = convert(Float64, 0), temp2::Float64
             temp = (pr - cprob) / tpr
             if (temp > 10.0)
                temp = Int(temp + 0.5)
@@ -4077,13 +4077,13 @@ end
 
 function  critneghyperg(j::Float64, k::Float64, m::Float64, cprob::Float64)::Float64
 #//i such that Pr(neghypergeometric(i,j,k,m)) >= cprob and  Pr(neghypergeometric(i-1,j,k,m)) < cprob
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
    if (cprob > 0.5)
       critneghyperg = critcompneghyperg(j, k, m, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64, temp::Float64, temp2::Float64, oneMinusP::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0), temp::Float64, temp2::Float64, oneMinusP::Float64
    pr = (m - k) / m
    i = invbeta(j * pr, pr * (k - j + 1.0), cprob, oneMinusP) * (m - k)
    while (true)
@@ -4177,13 +4177,13 @@ end
 
 function  critcompneghyperg(j::Float64, k::Float64, m::Float64, cprob::Float64)::Float64
 #//i such that 1-Pr(neghypergeometric(i,j,k,m)) > cprob and  1-Pr(neghypergeometric(i-1,j,k,m)) <= cprob
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
    if (cprob > 0.5)
       critcompneghyperg = critneghyperg(j, k, m, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64, temp::Float64, temp2::Float64, oneMinusP::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0), temp::Float64, temp2::Float64, oneMinusP::Float64
    pr = (m - k) / m
    i = invcompbeta(j * pr, pr * (k - j + 1.0), cprob, oneMinusP) * (m - k)
    while (true)
@@ -4206,7 +4206,7 @@ function  critcompneghyperg(j::Float64, k::Float64, m::Float64, cprob::Float64):
             while (tpr > cprob)
                i = i + 1.0
                temp = m - j - i + 1.0
-               if temp = 0.0 Exit Do
+               if temp = 0.0 break
                tpr = tpr * ((j + i - 1.0) * (m - i - k + 1.0)) / (i * temp)
             end
          else
@@ -4300,7 +4300,7 @@ function  GetRidOfMinusZeroes(x::Float64)::Float64
    end
 end
 
-function pmf_geometric(failures::Float64, success_prob::Float64)::Float64
+function  pmf_geometric(failures::Float64, success_prob::Float64)::Float64
    failures = AlterForIntegralChecks_Others(failures)
    if (success_prob < 0.0 || success_prob > 1.0)
       pmf_geometric = [#VALUE!]
@@ -4318,7 +4318,7 @@ function pmf_geometric(failures::Float64, success_prob::Float64)::Float64
    pmf_geometric = GetRidOfMinusZeroes(pmf_geometric)
 end
 
-function cdf_geometric(failures::Float64, success_prob::Float64)::Float64
+function  cdf_geometric(failures::Float64, success_prob::Float64)::Float64
    failures = Int(failures)
    if (success_prob < 0.0 || success_prob > 1.0)
       cdf_geometric = [#VALUE!]
@@ -4336,7 +4336,7 @@ function cdf_geometric(failures::Float64, success_prob::Float64)::Float64
    cdf_geometric = GetRidOfMinusZeroes(cdf_geometric)
 end
 
-function comp_cdf_geometric(failures::Float64, success_prob::Float64)::Float64
+function  comp_cdf_geometric(failures::Float64, success_prob::Float64)::Float64
    failures = Int(failures)
    if (success_prob < 0.0 || success_prob > 1.0)
       comp_cdf_geometric = [#VALUE!]
@@ -4354,7 +4354,7 @@ function comp_cdf_geometric(failures::Float64, success_prob::Float64)::Float64
    comp_cdf_geometric = GetRidOfMinusZeroes(comp_cdf_geometric)
 end
 
-function crit_geometric(success_prob::Float64, crit_prob::Float64)::Float64
+function  crit_geometric(success_prob::Float64, crit_prob::Float64)::Float64
    if (success_prob <= 0.0 || success_prob > 1.0 || crit_prob < 0.0 || crit_prob > 1.0)
       crit_geometric = [#VALUE!]
    elseif (crit_prob = 0.0)
@@ -4372,7 +4372,7 @@ function crit_geometric(success_prob::Float64, crit_prob::Float64)::Float64
    crit_geometric = GetRidOfMinusZeroes(crit_geometric)
 end
 
-function comp_crit_geometric(success_prob::Float64, crit_prob::Float64)::Float64
+function  comp_crit_geometric(success_prob::Float64, crit_prob::Float64)::Float64
    if (success_prob <= 0.0 || success_prob > 1.0 || crit_prob < 0.0 || crit_prob > 1.0)
       comp_crit_geometric = [#VALUE!]
    elseif (crit_prob = 1.0)
@@ -4390,7 +4390,7 @@ function comp_crit_geometric(success_prob::Float64, crit_prob::Float64)::Float64
    comp_crit_geometric = GetRidOfMinusZeroes(comp_crit_geometric)
 end
 
-function lcb_geometric(failures::Float64, prob::Float64)::Float64
+function  lcb_geometric(failures::Float64, prob::Float64)::Float64
    failures = AlterForIntegralChecks_Others(failures)
    if (prob < 0.0 || prob > 1.0 || failures < 0.0)
       lcb_geometric = [#VALUE!]
@@ -4402,7 +4402,7 @@ function lcb_geometric(failures::Float64, prob::Float64)::Float64
    lcb_geometric = GetRidOfMinusZeroes(lcb_geometric)
 end
 
-function ucb_geometric(failures::Float64, prob::Float64)::Float64
+function  ucb_geometric(failures::Float64, prob::Float64)::Float64
    failures = AlterForIntegralChecks_Others(failures)
    if (prob < 0.0 || prob > 1.0 || failures < 0.0)
       ucb_geometric = [#VALUE!]
@@ -4416,8 +4416,8 @@ function ucb_geometric(failures::Float64, prob::Float64)::Float64
    ucb_geometric = GetRidOfMinusZeroes(ucb_geometric)
 end
 
-function pmf_negbinomial(failures::Float64, success_prob::Float64, successes_reqd::Float64)::Float64
-   Dim q::Float64, dfm::Float64
+function  pmf_negbinomial(failures::Float64, success_prob::Float64, successes_reqd::Float64)::Float64
+   q::Float64 = convert(Float64, 0), dfm::Float64
    failures = AlterForIntegralChecks_Others(failures)
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (success_prob < 0.0 || success_prob > 1.0 || successes_reqd <= 0.0)
@@ -4438,8 +4438,8 @@ function pmf_negbinomial(failures::Float64, success_prob::Float64, successes_req
    pmf_negbinomial = GetRidOfMinusZeroes(pmf_negbinomial)
 end
 
-function cdf_negbinomial(failures::Float64, success_prob::Float64, successes_reqd::Float64)::Float64
-   Dim q::Float64, dfm::Float64
+function  cdf_negbinomial(failures::Float64, success_prob::Float64, successes_reqd::Float64)::Float64
+   q::Float64 = convert(Float64, 0), dfm::Float64
    failures = Int(failures)
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (success_prob < 0.0 || success_prob > 1.0 || successes_reqd <= 0.0)
@@ -4455,8 +4455,8 @@ function cdf_negbinomial(failures::Float64, success_prob::Float64, successes_req
    cdf_negbinomial = GetRidOfMinusZeroes(cdf_negbinomial)
 end
 
-function comp_cdf_negbinomial(failures::Float64, success_prob::Float64, successes_reqd::Float64)::Float64
-   Dim q::Float64, dfm::Float64
+function  comp_cdf_negbinomial(failures::Float64, success_prob::Float64, successes_reqd::Float64)::Float64
+   q::Float64 = convert(Float64, 0), dfm::Float64
    failures = Int(failures)
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (success_prob < 0.0 || success_prob > 1.0 || successes_reqd <= 0.0)
@@ -4472,7 +4472,7 @@ function comp_cdf_negbinomial(failures::Float64, success_prob::Float64, successe
    comp_cdf_negbinomial = GetRidOfMinusZeroes(comp_cdf_negbinomial)
 end
 
-function crit_negbinomial(success_prob::Float64, successes_reqd::Float64, crit_prob::Float64)::Float64
+function  crit_negbinomial(success_prob::Float64, successes_reqd::Float64, crit_prob::Float64)::Float64
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (success_prob <= 0.0 || success_prob > 1.0 || successes_reqd <= 0.0 || crit_prob < 0.0 || crit_prob > 1.0)
       crit_negbinomial = [#VALUE!]
@@ -4483,7 +4483,7 @@ function crit_negbinomial(success_prob::Float64, successes_reqd::Float64, crit_p
    elseif (crit_prob = 1.0)
       crit_negbinomial = [#VALUE!]
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       crit_negbinomial = critnegbinom(successes_reqd, success_prob, 1.0 - success_prob, crit_prob)
       i = crit_negbinomial
       pr = cdf_negbinomial(i, success_prob, successes_reqd)
@@ -4501,7 +4501,7 @@ function crit_negbinomial(success_prob::Float64, successes_reqd::Float64, crit_p
    crit_negbinomial = GetRidOfMinusZeroes(crit_negbinomial)
 end
 
-function comp_crit_negbinomial(success_prob::Float64, successes_reqd::Float64, crit_prob::Float64)::Float64
+function  comp_crit_negbinomial(success_prob::Float64, successes_reqd::Float64, crit_prob::Float64)::Float64
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (success_prob <= 0.0 || success_prob > 1.0 || successes_reqd <= 0.0 || crit_prob < 0.0 || crit_prob > 1.0)
       comp_crit_negbinomial = [#VALUE!]
@@ -4512,7 +4512,7 @@ function comp_crit_negbinomial(success_prob::Float64, successes_reqd::Float64, c
    elseif (crit_prob = 0.0)
       comp_crit_negbinomial = [#VALUE!]
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       comp_crit_negbinomial = critcompnegbinom(successes_reqd, success_prob, 1.0 - success_prob, crit_prob)
       i = comp_crit_negbinomial
       pr = comp_cdf_negbinomial(i, success_prob, successes_reqd)
@@ -4530,7 +4530,7 @@ function comp_crit_negbinomial(success_prob::Float64, successes_reqd::Float64, c
    comp_crit_negbinomial = GetRidOfMinusZeroes(comp_crit_negbinomial)
 end
 
-function lcb_negbinomial(failures::Float64, successes_reqd::Float64, prob::Float64)::Float64
+function  lcb_negbinomial(failures::Float64, successes_reqd::Float64, prob::Float64)::Float64
    failures = AlterForIntegralChecks_Others(failures)
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (prob < 0.0 || prob > 1.0 || failures < 0.0 || successes_reqd <= 0.0)
@@ -4540,13 +4540,13 @@ function lcb_negbinomial(failures::Float64, successes_reqd::Float64, prob::Float
    elseif (prob = 1.0)
       lcb_negbinomial = 1.0
    else
-      Dim oneMinusP::Float64
+      oneMinusP::Float64 = convert(Float64, 0)
       lcb_negbinomial = invbeta(successes_reqd, failures + 1, prob, oneMinusP)
    end
    lcb_negbinomial = GetRidOfMinusZeroes(lcb_negbinomial)
 end
 
-function ucb_negbinomial(failures::Float64, successes_reqd::Float64, prob::Float64)::Float64
+function  ucb_negbinomial(failures::Float64, successes_reqd::Float64, prob::Float64)::Float64
    failures = AlterForIntegralChecks_Others(failures)
    successes_reqd = AlterForIntegralChecks_NB(successes_reqd)
    if (prob < 0.0 || prob > 1.0 || failures < 0.0 || successes_reqd <= 0.0)
@@ -4556,14 +4556,14 @@ function ucb_negbinomial(failures::Float64, successes_reqd::Float64, prob::Float
    elseif (prob = 1.0)
       ucb_negbinomial = 0.0
    else
-      Dim oneMinusP::Float64
+      oneMinusP::Float64 = convert(Float64, 0)
       ucb_negbinomial = invcompbeta(successes_reqd, failures, prob, oneMinusP)
    end
    ucb_negbinomial = GetRidOfMinusZeroes(ucb_negbinomial)
 end
 
-function pmf_binomial(sample_size::Float64, successes::Float64, success_prob::Float64)::Float64
-   Dim q::Float64, dfm::Float64
+function  pmf_binomial(sample_size::Float64, successes::Float64, success_prob::Float64)::Float64
+   q::Float64 = convert(Float64, 0), dfm::Float64
    successes = AlterForIntegralChecks_Others(successes)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (success_prob < 0.0 || success_prob > 1.0 || sample_size < 0.0)
@@ -4580,8 +4580,8 @@ function pmf_binomial(sample_size::Float64, successes::Float64, success_prob::Fl
    pmf_binomial = GetRidOfMinusZeroes(pmf_binomial)
 end
 
-function cdf_binomial(sample_size::Float64, successes::Float64, success_prob::Float64)::Float64
-   Dim q::Float64, dfm::Float64
+function  cdf_binomial(sample_size::Float64, successes::Float64, success_prob::Float64)::Float64
+   q::Float64 = convert(Float64, 0), dfm::Float64
    successes = Int(successes)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (success_prob < 0.0 || success_prob > 1.0 || sample_size < 0.0)
@@ -4598,8 +4598,8 @@ function cdf_binomial(sample_size::Float64, successes::Float64, success_prob::Fl
    cdf_binomial = GetRidOfMinusZeroes(cdf_binomial)
 end
 
-function comp_cdf_binomial(sample_size::Float64, successes::Float64, success_prob::Float64)::Float64
-   Dim q::Float64, dfm::Float64
+function  comp_cdf_binomial(sample_size::Float64, successes::Float64, success_prob::Float64)::Float64
+   q::Float64 = convert(Float64, 0), dfm::Float64
    successes = Int(successes)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (success_prob < 0.0 || success_prob > 1.0 || sample_size < 0.0)
@@ -4616,7 +4616,7 @@ function comp_cdf_binomial(sample_size::Float64, successes::Float64, success_pro
    comp_cdf_binomial = GetRidOfMinusZeroes(comp_cdf_binomial)
 end
 
-function crit_binomial(sample_size::Float64, success_prob::Float64, crit_prob::Float64)::Float64
+function  crit_binomial(sample_size::Float64, success_prob::Float64, crit_prob::Float64)::Float64
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (success_prob < 0.0 || success_prob > 1.0 || sample_size < 0.0 || crit_prob < 0.0 || crit_prob > 1.0)
       crit_binomial = [#VALUE!]
@@ -4627,7 +4627,7 @@ function crit_binomial(sample_size::Float64, success_prob::Float64, crit_prob::F
    elseif (crit_prob = 1.0 || success_prob = 1.0)
       crit_binomial = sample_size
    else
-      Dim pr::Float64, i::Float64
+      pr::Float64 = convert(Float64, 0), i::Float64
       crit_binomial = critbinomial(sample_size, success_prob, crit_prob)
       i = crit_binomial
       pr = cdf_binomial(sample_size, i, success_prob)
@@ -4645,7 +4645,7 @@ function crit_binomial(sample_size::Float64, success_prob::Float64, crit_prob::F
    crit_binomial = GetRidOfMinusZeroes(crit_binomial)
 end
 
-function comp_crit_binomial(sample_size::Float64, success_prob::Float64, crit_prob::Float64)::Float64
+function  comp_crit_binomial(sample_size::Float64, success_prob::Float64, crit_prob::Float64)::Float64
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (success_prob < 0.0 || success_prob > 1.0 || sample_size < 0.0 || crit_prob < 0.0 || crit_prob > 1.0)
       comp_crit_binomial = [#VALUE!]
@@ -4656,7 +4656,7 @@ function comp_crit_binomial(sample_size::Float64, success_prob::Float64, crit_pr
    elseif (success_prob = 0.0)
       comp_crit_binomial = 0.0
    else
-      Dim pr::Float64, i::Float64
+      pr::Float64 = convert(Float64, 0), i::Float64
       comp_crit_binomial = critcompbinomial(sample_size, success_prob, crit_prob)
       i = comp_crit_binomial
       pr = comp_cdf_binomial(sample_size, i, success_prob)
@@ -4674,7 +4674,7 @@ function comp_crit_binomial(sample_size::Float64, success_prob::Float64, crit_pr
    comp_crit_binomial = GetRidOfMinusZeroes(comp_crit_binomial)
 end
 
-function lcb_binomial(sample_size::Float64, successes::Float64, prob::Float64)::Float64
+function  lcb_binomial(sample_size::Float64, successes::Float64, prob::Float64)::Float64
    successes = AlterForIntegralChecks_Others(successes)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (prob < 0.0 || prob > 1.0)
@@ -4686,13 +4686,13 @@ function lcb_binomial(sample_size::Float64, successes::Float64, prob::Float64)::
    elseif (prob = 1.0)
       lcb_binomial = 1.0
    else
-      Dim oneMinusP::Float64
+      oneMinusP::Float64 = convert(Float64, 0)
       lcb_binomial = invcompbinom(successes - 1.0, sample_size - successes + 1.0, prob, oneMinusP)
    end
    lcb_binomial = GetRidOfMinusZeroes(lcb_binomial)
 end
 
-function ucb_binomial(sample_size::Float64, successes::Float64, prob::Float64)::Float64
+function  ucb_binomial(sample_size::Float64, successes::Float64, prob::Float64)::Float64
    successes = AlterForIntegralChecks_Others(successes)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (prob < 0.0 || prob > 1.0)
@@ -4704,13 +4704,13 @@ function ucb_binomial(sample_size::Float64, successes::Float64, prob::Float64)::
    elseif (prob = 1.0)
       ucb_binomial = 0.0
    else
-      Dim oneMinusP::Float64
+      oneMinusP::Float64 = convert(Float64, 0)
       ucb_binomial = invbinom(successes, sample_size - successes, prob, oneMinusP)
    end
    ucb_binomial = GetRidOfMinusZeroes(ucb_binomial)
 end
 
-function pmf_poisson(mean::Float64, i::Float64)::Float64
+function  pmf_poisson(mean::Float64, i::Float64)::Float64
    i = AlterForIntegralChecks_Others(i)
    if (mean < 0.0)
       pmf_poisson = [#VALUE!]
@@ -4722,7 +4722,7 @@ function pmf_poisson(mean::Float64, i::Float64)::Float64
    pmf_poisson = GetRidOfMinusZeroes(pmf_poisson)
 end
 
-function cdf_poisson(mean::Float64, i::Float64)::Float64
+function  cdf_poisson(mean::Float64, i::Float64)::Float64
    i = Int(i)
    if (mean < 0.0)
       cdf_poisson = [#VALUE!]
@@ -4734,7 +4734,7 @@ function cdf_poisson(mean::Float64, i::Float64)::Float64
    cdf_poisson = GetRidOfMinusZeroes(cdf_poisson)
 end
 
-function comp_cdf_poisson(mean::Float64, i::Float64)::Float64
+function  comp_cdf_poisson(mean::Float64, i::Float64)::Float64
    i = Int(i)
    if (mean < 0.0)
       comp_cdf_poisson = [#VALUE!]
@@ -4746,7 +4746,7 @@ function comp_cdf_poisson(mean::Float64, i::Float64)::Float64
    comp_cdf_poisson = GetRidOfMinusZeroes(comp_cdf_poisson)
 end
 
-function crit_poisson(mean::Float64, crit_prob::Float64)::Float64
+function  crit_poisson(mean::Float64, crit_prob::Float64)::Float64
    if (crit_prob < 0.0 || crit_prob > 1.0 || mean < 0.0)
       crit_poisson = [#VALUE!]
    elseif (crit_prob = 0.0)
@@ -4756,7 +4756,7 @@ function crit_poisson(mean::Float64, crit_prob::Float64)::Float64
    elseif (crit_prob = 1.0)
       crit_poisson = [#VALUE!]
    else
-      Dim pr::Float64
+      pr::Float64 = convert(Float64, 0)
       crit_poisson = critpoiss(mean, crit_prob)
       pr = cpoisson(crit_poisson, mean, mean - crit_poisson)
       if (pr = crit_prob)
@@ -4773,7 +4773,7 @@ function crit_poisson(mean::Float64, crit_prob::Float64)::Float64
    crit_poisson = GetRidOfMinusZeroes(crit_poisson)
 end
 
-function comp_crit_poisson(mean::Float64, crit_prob::Float64)::Float64
+function  comp_crit_poisson(mean::Float64, crit_prob::Float64)::Float64
    if (crit_prob < 0.0 || crit_prob > 1.0 || mean < 0.0)
       comp_crit_poisson = [#VALUE!]
    elseif (crit_prob = 1.0)
@@ -4783,7 +4783,7 @@ function comp_crit_poisson(mean::Float64, crit_prob::Float64)::Float64
    elseif (crit_prob = 0.0)
       comp_crit_poisson = [#VALUE!]
    else
-      Dim pr::Float64
+      pr::Float64 = convert(Float64, 0)
       comp_crit_poisson = critcomppoiss(mean, crit_prob)
       pr = comppoisson(comp_crit_poisson, mean, mean - comp_crit_poisson)
       if (pr = crit_prob)
@@ -4800,7 +4800,7 @@ function comp_crit_poisson(mean::Float64, crit_prob::Float64)::Float64
    comp_crit_poisson = GetRidOfMinusZeroes(comp_crit_poisson)
 end
 
-function lcb_poisson(i::Float64, prob::Float64)::Float64
+function  lcb_poisson(i::Float64, prob::Float64)::Float64
    i = AlterForIntegralChecks_Others(i)
    if (prob < 0.0 || prob > 1.0 || i < 0.0)
       lcb_poisson = [#VALUE!]
@@ -4814,7 +4814,7 @@ function lcb_poisson(i::Float64, prob::Float64)::Float64
    lcb_poisson = GetRidOfMinusZeroes(lcb_poisson)
 end
 
-function ucb_poisson(i::Float64, prob::Float64)::Float64
+function  ucb_poisson(i::Float64, prob::Float64)::Float64
    i = AlterForIntegralChecks_Others(i)
    if (prob <= 0.0 || prob > 1.0)
       ucb_poisson = [#VALUE!]
@@ -4828,7 +4828,7 @@ function ucb_poisson(i::Float64, prob::Float64)::Float64
    ucb_poisson = GetRidOfMinusZeroes(ucb_poisson)
 end
 
-function pmf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Float64, pop_size::Float64)::Float64
+function  pmf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Float64, pop_size::Float64)::Float64
    type1s = AlterForIntegralChecks_Others(type1s)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
@@ -4841,7 +4841,7 @@ function pmf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Fl
    pmf_hypergeometric = GetRidOfMinusZeroes(pmf_hypergeometric)
 end
 
-function cdf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Float64, pop_size::Float64)::Float64
+function  cdf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Float64, pop_size::Float64)::Float64
    type1s = Int(type1s)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
@@ -4849,13 +4849,13 @@ function cdf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Fl
    if (sample_size < 0.0 || tot_type1 < 0.0 || sample_size > pop_size || tot_type1 > pop_size)
       cdf_hypergeometric = [#VALUE!]
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
       cdf_hypergeometric = hypergeometric(type1s, sample_size - type1s, tot_type1 - type1s, pop_size - tot_type1 - sample_size + type1s, false, ha1, hprob, hswap)
    end
    cdf_hypergeometric = GetRidOfMinusZeroes(cdf_hypergeometric)
 end
 
-function comp_cdf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Float64, pop_size::Float64)::Float64
+function  comp_cdf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type1::Float64, pop_size::Float64)::Float64
    type1s = Int(type1s)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
@@ -4863,13 +4863,13 @@ function comp_cdf_hypergeometric(type1s::Float64, sample_size::Float64, tot_type
    if (sample_size < 0.0 || tot_type1 < 0.0 || sample_size > pop_size || tot_type1 > pop_size)
       comp_cdf_hypergeometric = [#VALUE!]
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
       comp_cdf_hypergeometric = hypergeometric(type1s, sample_size - type1s, tot_type1 - type1s, pop_size - tot_type1 - sample_size + type1s, true, ha1, hprob, hswap)
    end
    comp_cdf_hypergeometric = GetRidOfMinusZeroes(comp_cdf_hypergeometric)
 end
 
-function crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
+function  crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
    sample_size = AlterForIntegralChecks_Others(sample_size)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -4886,8 +4886,8 @@ function crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_size:
    elseif (crit_prob = 1.0)
       crit_hypergeometric = min(sample_size, tot_type1)
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
-      Dim i::Float64, pr::Float64
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+      i::Float64 = convert(Float64, 0), pr::Float64
       crit_hypergeometric = crithyperg(sample_size, tot_type1, pop_size, crit_prob)
       i = crit_hypergeometric
       pr = hypergeometric(i, sample_size - i, tot_type1 - i, pop_size - tot_type1 - sample_size + i, false, ha1, hprob, hswap)
@@ -4905,7 +4905,7 @@ function crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_size:
    crit_hypergeometric = GetRidOfMinusZeroes(crit_hypergeometric)
 end
 
-function comp_crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
+function  comp_crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
    sample_size = AlterForIntegralChecks_Others(sample_size)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -4922,8 +4922,8 @@ function comp_crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_
    elseif (crit_prob = 0.0)
       comp_crit_hypergeometric = min(sample_size, tot_type1)
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
-      Dim i::Float64, pr::Float64
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+      i::Float64 = convert(Float64, 0), pr::Float64
       comp_crit_hypergeometric = critcomphyperg(sample_size, tot_type1, pop_size, crit_prob)
       i = comp_crit_hypergeometric
       pr = hypergeometric(i, sample_size - i, tot_type1 - i, pop_size - tot_type1 - sample_size + i, true, ha1, hprob, hswap)
@@ -4941,7 +4941,7 @@ function comp_crit_hypergeometric(sample_size::Float64, tot_type1::Float64, pop_
    comp_crit_hypergeometric = GetRidOfMinusZeroes(comp_crit_hypergeometric)
 end
 
-function lcb_hypergeometric(type1s::Float64, sample_size::Float64, pop_size::Float64, prob::Float64)::Float64
+function  lcb_hypergeometric(type1s::Float64, sample_size::Float64, pop_size::Float64, prob::Float64)::Float64
    type1s = AlterForIntegralChecks_Others(type1s)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -4961,7 +4961,7 @@ function lcb_hypergeometric(type1s::Float64, sample_size::Float64, pop_size::Flo
    lcb_hypergeometric = GetRidOfMinusZeroes(lcb_hypergeometric)
 end
 
-function ucb_hypergeometric(type1s::Float64, sample_size::Float64, pop_size::Float64, prob::Float64)::Float64
+function  ucb_hypergeometric(type1s::Float64, sample_size::Float64, pop_size::Float64, prob::Float64)::Float64
    type1s = AlterForIntegralChecks_Others(type1s)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -4981,7 +4981,7 @@ function ucb_hypergeometric(type1s::Float64, sample_size::Float64, pop_size::Flo
    ucb_hypergeometric = GetRidOfMinusZeroes(ucb_hypergeometric)
 end
 
-function pmf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64)::Float64
+function  pmf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64)::Float64
    type2s = AlterForIntegralChecks_Others(type2s)
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
@@ -5000,7 +5000,7 @@ function pmf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1:
    pmf_neghypergeometric = GetRidOfMinusZeroes(pmf_neghypergeometric)
 end
 
-function cdf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64)::Float64
+function  cdf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64)::Float64
    type2s = Int(type2s)
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
@@ -5010,13 +5010,13 @@ function cdf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1:
    elseif (tot_type1 + type2s > pop_size)
       cdf_neghypergeometric = 1.0
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
       cdf_neghypergeometric = hypergeometric(type2s, type1s_reqd, pop_size - tot_type1 - type2s, tot_type1 - type1s_reqd, false, ha1, hprob, hswap)
    end
    cdf_neghypergeometric = GetRidOfMinusZeroes(cdf_neghypergeometric)
 end
 
-function comp_cdf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64)::Float64
+function  comp_cdf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64)::Float64
    type2s = Int(type2s)
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
@@ -5026,13 +5026,13 @@ function comp_cdf_neghypergeometric(type2s::Float64, type1s_reqd::Float64, tot_t
    elseif (tot_type1 + type2s > pop_size)
       comp_cdf_neghypergeometric = 0.0
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
       comp_cdf_neghypergeometric = hypergeometric(type2s, type1s_reqd, pop_size - tot_type1 - type2s, tot_type1 - type1s_reqd, true, ha1, hprob, hswap)
    end
    comp_cdf_neghypergeometric = GetRidOfMinusZeroes(comp_cdf_neghypergeometric)
 end
 
-function crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
+function  crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -5047,8 +5047,8 @@ function crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, pop_si
    elseif (crit_prob = 1.0)
       crit_neghypergeometric = pop_size - tot_type1
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
-      Dim i::Float64, pr::Float64
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+      i::Float64 = convert(Float64, 0), pr::Float64
       crit_neghypergeometric = critneghyperg(type1s_reqd, tot_type1, pop_size, crit_prob)
       i = crit_neghypergeometric
       pr = hypergeometric(i, type1s_reqd, pop_size - tot_type1 - i, tot_type1 - type1s_reqd, false, ha1, hprob, hswap)
@@ -5066,7 +5066,7 @@ function crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, pop_si
    crit_neghypergeometric = GetRidOfMinusZeroes(crit_neghypergeometric)
 end
 
-function comp_crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
+function  comp_crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, pop_size::Float64, crit_prob::Float64)::Float64
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    tot_type1 = AlterForIntegralChecks_Others(tot_type1)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -5079,8 +5079,8 @@ function comp_crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, p
    elseif (crit_prob = 0.0 || pop_size = tot_type1)
       comp_crit_neghypergeometric = pop_size - tot_type1
    else
-      Dim ha1::Float64, hprob::Float64, hswap::Bool
-      Dim i::Float64, pr::Float64
+      ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+      i::Float64 = convert(Float64, 0), pr::Float64
       comp_crit_neghypergeometric = critcompneghyperg(type1s_reqd, tot_type1, pop_size, crit_prob)
       i = comp_crit_neghypergeometric
       pr = hypergeometric(i, type1s_reqd, pop_size - tot_type1 - i, tot_type1 - type1s_reqd, true, ha1, hprob, hswap)
@@ -5098,7 +5098,7 @@ function comp_crit_neghypergeometric(type1s_reqd::Float64, tot_type1::Float64, p
    comp_crit_neghypergeometric = GetRidOfMinusZeroes(comp_crit_neghypergeometric)
 end
 
-function lcb_neghypergeometric(type2s::Float64, type1s_reqd::Float64, pop_size::Float64, prob::Float64)::Float64
+function  lcb_neghypergeometric(type2s::Float64, type1s_reqd::Float64, pop_size::Float64, prob::Float64)::Float64
    type2s = AlterForIntegralChecks_Others(type2s)
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -5118,7 +5118,7 @@ function lcb_neghypergeometric(type2s::Float64, type1s_reqd::Float64, pop_size::
    lcb_neghypergeometric = GetRidOfMinusZeroes(lcb_neghypergeometric)
 end
 
-function ucb_neghypergeometric(type2s::Float64, type1s_reqd::Float64, pop_size::Float64, prob::Float64)::Float64
+function  ucb_neghypergeometric(type2s::Float64, type1s_reqd::Float64, pop_size::Float64, prob::Float64)::Float64
    type2s = AlterForIntegralChecks_Others(type2s)
    type1s_reqd = AlterForIntegralChecks_Others(type1s_reqd)
    pop_size = AlterForIntegralChecks_Others(pop_size)
@@ -5138,7 +5138,7 @@ function ucb_neghypergeometric(type2s::Float64, type1s_reqd::Float64, pop_size::
    ucb_neghypergeometric = GetRidOfMinusZeroes(ucb_neghypergeometric)
 end
 
-function pdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
+function  pdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
    if (Min > mode || mode > Max)
       pdf_triangular = [#VALUE!]
    elseif (x <= Min || x >= Max)
@@ -5150,7 +5150,7 @@ function pdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::
    end
 end
 
-function cdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
+function  cdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
    if (Min > mode || mode > Max)
       cdf_triangular = [#VALUE!]
    elseif (x <= Min)
@@ -5164,7 +5164,7 @@ function cdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::
    end
 end
 
-function comp_cdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
+function  comp_cdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
    if (Min > mode || mode > Max)
       comp_cdf_triangular = [#VALUE!]
    elseif (x <= Min)
@@ -5178,8 +5178,8 @@ function comp_cdf_triangular(x::Float64, Min::Float64, mode::Float64, Max::Float
    end
 end
 
-function inv_triangular(prob::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
-Dim temp::Float64
+function  inv_triangular(prob::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
+temp::Float64 = convert(Float64, 0)
    if (prob < 0.0 || prob > 1.0 || Min > mode || mode > Max)
       inv_triangular = [#VALUE!]
    elseif (prob <= (mode - Min) / (Max - Min))
@@ -5194,8 +5194,8 @@ Dim temp::Float64
    end
 end
 
-function comp_inv_triangular(prob::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
-Dim temp::Float64
+function  comp_inv_triangular(prob::Float64, Min::Float64, mode::Float64, Max::Float64)::Float64
+temp::Float64 = convert(Float64, 0)
    if (prob < 0.0 || prob > 1.0 || Min > mode || mode > Max)
       comp_inv_triangular = [#VALUE!]
    elseif (prob <= (Max - mode) / (Max - Min))
@@ -5210,7 +5210,7 @@ Dim temp::Float64
    end
 end
 
-function pdf_exponential(x::Float64, lambda::Float64)::Float64
+function  pdf_exponential(x::Float64, lambda::Float64)::Float64
    if (lambda <= 0.0)
       pdf_exponential = [#VALUE!]
    elseif (x < 0.0)
@@ -5221,7 +5221,7 @@ function pdf_exponential(x::Float64, lambda::Float64)::Float64
    pdf_exponential = GetRidOfMinusZeroes(pdf_exponential)
 end
 
-function cdf_exponential(x::Float64, lambda::Float64)::Float64
+function  cdf_exponential(x::Float64, lambda::Float64)::Float64
    if (lambda <= 0.0)
       cdf_exponential = [#VALUE!]
    elseif (x < 0.0)
@@ -5232,7 +5232,7 @@ function cdf_exponential(x::Float64, lambda::Float64)::Float64
    cdf_exponential = GetRidOfMinusZeroes(cdf_exponential)
 end
 
-function comp_cdf_exponential(x::Float64, lambda::Float64)::Float64
+function  comp_cdf_exponential(x::Float64, lambda::Float64)::Float64
    if (lambda <= 0.0)
       comp_cdf_exponential = [#VALUE!]
    elseif (x < 0.0)
@@ -5243,7 +5243,7 @@ function comp_cdf_exponential(x::Float64, lambda::Float64)::Float64
    comp_cdf_exponential = GetRidOfMinusZeroes(comp_cdf_exponential)
 end
 
-function inv_exponential(prob::Float64, lambda::Float64)::Float64
+function  inv_exponential(prob::Float64, lambda::Float64)::Float64
    if (lambda <= 0.0 || prob < 0.0 || prob >= 1.0)
       inv_exponential = [#VALUE!]
    else
@@ -5252,7 +5252,7 @@ function inv_exponential(prob::Float64, lambda::Float64)::Float64
    inv_exponential = GetRidOfMinusZeroes(inv_exponential)
 end
 
-function comp_inv_exponential(prob::Float64, lambda::Float64)::Float64
+function  comp_inv_exponential(prob::Float64, lambda::Float64)::Float64
    if (lambda <= 0.0 || prob <= 0.0 || prob > 1.0)
       comp_inv_exponential = [#VALUE!]
    else
@@ -5261,7 +5261,7 @@ function comp_inv_exponential(prob::Float64, lambda::Float64)::Float64
    comp_inv_exponential = GetRidOfMinusZeroes(comp_inv_exponential)
 end
 
-function pdf_normal(x::Float64)::Float64
+function  pdf_normal(x::Float64)::Float64
    if (abs(x) < 40.0)
       pdf_normal = exp(-x * x * 0.5) * OneOverSqrTwoPi
    else
@@ -5270,12 +5270,12 @@ function pdf_normal(x::Float64)::Float64
    pdf_normal = GetRidOfMinusZeroes(pdf_normal)
 end
 
-function cdf_normal(x::Float64)::Float64
+function  cdf_normal(x::Float64)::Float64
    cdf_normal = cnormal(x)
    cdf_normal = GetRidOfMinusZeroes(cdf_normal)
 end
 
-function inv_normal(prob::Float64)::Float64
+function  inv_normal(prob::Float64)::Float64
    if (prob <= 0.0 || prob >= 1.0)
       inv_normal = [#VALUE!]
    else
@@ -5284,13 +5284,13 @@ function inv_normal(prob::Float64)::Float64
    inv_normal = GetRidOfMinusZeroes(inv_normal)
 end
 
-function pdf_chi_sq(x::Float64, df::Float64)::Float64
+function  pdf_chi_sq(x::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    pdf_chi_sq = pdf_gamma(x, df / 2.0, 2.0)
    pdf_chi_sq = GetRidOfMinusZeroes(pdf_chi_sq)
 end
 
-function cdf_chi_sq(x::Float64, df::Float64)::Float64
+function  cdf_chi_sq(x::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    if (df <= 0.0)
       cdf_chi_sq = [#VALUE!]
@@ -5302,7 +5302,7 @@ function cdf_chi_sq(x::Float64, df::Float64)::Float64
    cdf_chi_sq = GetRidOfMinusZeroes(cdf_chi_sq)
 end
 
-function comp_cdf_chi_sq(x::Float64, df::Float64)::Float64
+function  comp_cdf_chi_sq(x::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    if (df <= 0.0)
       comp_cdf_chi_sq = [#VALUE!]
@@ -5314,7 +5314,7 @@ function comp_cdf_chi_sq(x::Float64, df::Float64)::Float64
    comp_cdf_chi_sq = GetRidOfMinusZeroes(comp_cdf_chi_sq)
 end
 
-function inv_chi_sq(prob::Float64, df::Float64)::Float64
+function  inv_chi_sq(prob::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    if (df <= 0.0 || prob < 0.0 || prob >= 1.0)
       inv_chi_sq = [#VALUE!]
@@ -5326,7 +5326,7 @@ function inv_chi_sq(prob::Float64, df::Float64)::Float64
    inv_chi_sq = GetRidOfMinusZeroes(inv_chi_sq)
 end
 
-function comp_inv_chi_sq(prob::Float64, df::Float64)::Float64
+function  comp_inv_chi_sq(prob::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    if (df <= 0.0 || prob <= 0.0 || prob > 1.0)
       comp_inv_chi_sq = [#VALUE!]
@@ -5338,8 +5338,8 @@ function comp_inv_chi_sq(prob::Float64, df::Float64)::Float64
    comp_inv_chi_sq = GetRidOfMinusZeroes(comp_inv_chi_sq)
 end
 
-function pdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Float64
-   Dim xs::Float64
+function  pdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Float64
+   xs::Float64 = convert(Float64, 0)
    if (shape_param <= 0.0 || scale_param <= 0.0)
       pdf_gamma = [#VALUE!]
    elseif (x < 0.0)
@@ -5359,7 +5359,7 @@ function pdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Floa
    pdf_gamma = GetRidOfMinusZeroes(pdf_gamma)
 end
 
-function cdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Float64
+function  cdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Float64
    if (shape_param <= 0.0 || scale_param <= 0.0)
       cdf_gamma = [#VALUE!]
    elseif (x <= 0.0)
@@ -5370,7 +5370,7 @@ function cdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Floa
    cdf_gamma = GetRidOfMinusZeroes(cdf_gamma)
 end
 
-function comp_cdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Float64
+function  comp_cdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64)::Float64
    if (shape_param <= 0.0 || scale_param <= 0.0)
       comp_cdf_gamma = [#VALUE!]
    elseif (x <= 0.0)
@@ -5381,7 +5381,7 @@ function comp_cdf_gamma(x::Float64, shape_param::Float64, scale_param::Float64):
    comp_cdf_gamma = GetRidOfMinusZeroes(comp_cdf_gamma)
 end
 
-function inv_gamma(prob::Float64, shape_param::Float64, scale_param::Float64)::Float64
+function  inv_gamma(prob::Float64, shape_param::Float64, scale_param::Float64)::Float64
    if (shape_param <= 0.0 || scale_param <= 0.0 || prob < 0.0 || prob >= 1.0)
       inv_gamma = [#VALUE!]
    elseif (prob = 0.0)
@@ -5392,7 +5392,7 @@ function inv_gamma(prob::Float64, shape_param::Float64, scale_param::Float64)::F
    inv_gamma = GetRidOfMinusZeroes(inv_gamma)
 end
 
-function comp_inv_gamma(prob::Float64, shape_param::Float64, scale_param::Float64)::Float64
+function  comp_inv_gamma(prob::Float64, shape_param::Float64, scale_param::Float64)::Float64
    if (shape_param <= 0.0 || scale_param <= 0.0 || prob <= 0.0 || prob > 1.0)
       comp_inv_gamma = [#VALUE!]
    elseif (prob = 1.0)
@@ -5405,7 +5405,7 @@ end
 
 function  pdftdist(x::Float64, k::Float64)::Float64
 #//Probability density for a variate from t-distribution with k degress of freedom
-   Dim a::Float64, x2::Float64, k2::Float64, logterm::Float64, c5::Float64
+   a::Float64 = convert(Float64, 0), x2::Float64, k2::Float64, logterm::Float64, c5::Float64
    if (k <= 0.0)
       pdftdist = [#VALUE!]
    elseif (k > 1E+30)
@@ -5435,14 +5435,14 @@ function  pdftdist(x::Float64, k::Float64)::Float64
    end
 end
 
-function pdf_tdist(x::Float64, df::Float64)::Float64
+function  pdf_tdist(x::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    pdf_tdist = pdftdist(x, df)
    pdf_tdist = GetRidOfMinusZeroes(pdf_tdist)
 end
 
-function cdf_tdist(x::Float64, df::Float64)::Float64
-   Dim tdistDensity::Float64
+function  cdf_tdist(x::Float64, df::Float64)::Float64
+   tdistDensity::Float64 = convert(Float64, 0)
    df = AlterForIntegralChecks_df(df)
    if (df <= 0.0)
       cdf_tdist = [#VALUE!]
@@ -5452,7 +5452,7 @@ function cdf_tdist(x::Float64, df::Float64)::Float64
    cdf_tdist = GetRidOfMinusZeroes(cdf_tdist)
 end
 
-function inv_tdist(prob::Float64, df::Float64)::Float64
+function  inv_tdist(prob::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    if (df <= 0.0)
       inv_tdist = [#VALUE!]
@@ -5464,7 +5464,7 @@ function inv_tdist(prob::Float64, df::Float64)::Float64
    inv_tdist = GetRidOfMinusZeroes(inv_tdist)
 end
 
-function pdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
+function  pdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0)
@@ -5478,7 +5478,7 @@ function pdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    elseif (x = 0.0)
       pdf_fdist = 1.0
    else
-      Dim p::Float64, q::Float64
+      p::Float64 = convert(Float64, 0), q::Float64
       if x > 1.0
          q = df2 / x
          p = q + df1
@@ -5506,7 +5506,7 @@ function pdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    pdf_fdist = GetRidOfMinusZeroes(pdf_fdist)
 end
 
-function cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
+function  cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0)
@@ -5514,7 +5514,7 @@ function cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    elseif (x <= 0.0)
       cdf_fdist = 0.0
    else
-      Dim p::Float64, q::Float64
+      p::Float64 = convert(Float64, 0), q::Float64
       if x > 1.0
          q = df2 / x
          p = q + df1
@@ -5541,7 +5541,7 @@ function cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    cdf_fdist = GetRidOfMinusZeroes(cdf_fdist)
 end
 
-function comp_cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
+function  comp_cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0)
@@ -5549,7 +5549,7 @@ function comp_cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    elseif (x <= 0.0)
       comp_cdf_fdist = 1.0
    else
-      Dim p::Float64, q::Float64
+      p::Float64 = convert(Float64, 0), q::Float64
       if x > 1.0
          q = df2 / x
          p = q + df1
@@ -5576,7 +5576,7 @@ function comp_cdf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    comp_cdf_fdist = GetRidOfMinusZeroes(comp_cdf_fdist)
 end
 
-function inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
+function  inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || prob < 0.0 || prob >= 1.0)
@@ -5584,7 +5584,7 @@ function inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
    elseif (prob = 0.0)
       inv_fdist = 0.0
    else
-      Dim temp::Float64, oneMinusP::Float64
+      temp::Float64 = convert(Float64, 0), oneMinusP::Float64
       df1 = df1 / 2.0
       df2 = df2 / 2.0
       temp = invbeta(df1, df2, prob, oneMinusP)
@@ -5594,7 +5594,7 @@ function inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
    inv_fdist = GetRidOfMinusZeroes(inv_fdist)
 end
 
-function comp_inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
+function  comp_inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || prob <= 0.0 || prob > 1.0)
@@ -5602,7 +5602,7 @@ function comp_inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
    elseif (prob = 1.0)
       comp_inv_fdist = 0.0
    else
-      Dim temp::Float64, oneMinusP::Float64
+      temp::Float64 = convert(Float64, 0), oneMinusP::Float64
       df1 = df1 / 2.0
       df2 = df2 / 2.0
       temp = invcompbeta(df1, df2, prob, oneMinusP)
@@ -5612,7 +5612,7 @@ function comp_inv_fdist(prob::Float64, df1::Float64, df2::Float64)::Float64
    comp_inv_fdist = GetRidOfMinusZeroes(comp_inv_fdist)
 end
 
-function pdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  pdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
    if (shape_param1 <= 0.0 || shape_param2 <= 0.0)
       pdf_beta = [#VALUE!]
    elseif (x < 0.0 || x > 1.0)
@@ -5626,7 +5626,7 @@ function pdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Flo
    elseif ((x = 0.0) || (x = 1.0))
       pdf_beta = 0.0
    else
-      Dim mx::Float64, mn::Float64
+      mx::Float64 = convert(Float64, 0), mn::Float64
       mx = max(shape_param1, shape_param2)
       mn = min(shape_param1, shape_param2)
       pdf_beta = (binomialTerm(shape_param1, shape_param2, x, 1.0 - x, (shape_param1 * (x - 1.0) + x * shape_param2), 0.0) * mx / (mn + mx)) * mn / (x * (1.0 - x))
@@ -5634,7 +5634,7 @@ function pdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Flo
    pdf_beta = GetRidOfMinusZeroes(pdf_beta)
 end
 
-function cdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  cdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
    if (shape_param1 <= 0.0 || shape_param2 <= 0.0)
       cdf_beta = [#VALUE!]
    elseif (x <= 0.0)
@@ -5647,7 +5647,7 @@ function cdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Flo
    cdf_beta = GetRidOfMinusZeroes(cdf_beta)
 end
 
-function comp_cdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  comp_cdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
    if (shape_param1 <= 0.0 || shape_param2 <= 0.0)
       comp_cdf_beta = [#VALUE!]
    elseif (x <= 0.0)
@@ -5660,30 +5660,30 @@ function comp_cdf_beta(x::Float64, shape_param1::Float64, shape_param2::Float64)
    comp_cdf_beta = GetRidOfMinusZeroes(comp_cdf_beta)
 end
 
-function inv_beta(prob::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  inv_beta(prob::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
    if (shape_param1 <= 0.0 || shape_param2 <= 0.0 || prob < 0.0 || prob > 1.0)
       inv_beta = [#VALUE!]
    else
-      Dim oneMinusP::Float64
+      oneMinusP::Float64 = convert(Float64, 0)
       inv_beta = invbeta(shape_param1, shape_param2, prob, oneMinusP)
    end
    inv_beta = GetRidOfMinusZeroes(inv_beta)
 end
 
-function comp_inv_beta(prob::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  comp_inv_beta(prob::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
    if (shape_param1 <= 0.0 || shape_param2 <= 0.0 || prob < 0.0 || prob > 1.0)
       comp_inv_beta = [#VALUE!]
    else
-      Dim oneMinusP::Float64
+      oneMinusP::Float64 = convert(Float64, 0)
       comp_inv_beta = invcompbeta(shape_param1, shape_param2, prob, oneMinusP)
    end
    comp_inv_beta = GetRidOfMinusZeroes(comp_inv_beta)
 end
 
 function  gamma_nc1(x::Float64, a::Float64, nc::Float64, ByRef nc_derivative::Float64)::Float64
-   Dim aa::Float64, bb::Float64, nc_dtemp::Float64
-   Dim n::Float64, p::Float64, w::Float64, s::Float64, ps::Float64
-   Dim result::Float64, term::Float64, ptx::Float64, ptnc::Float64
+   aa::Float64 = convert(Float64, 0), bb::Float64, nc_dtemp::Float64
+   n::Float64 = convert(Float64, 0), p::Float64, w::Float64, s::Float64, ps::Float64
+   result::Float64 = convert(Float64, 0), term::Float64, ptx::Float64, ptnc::Float64
    if a <= 1.0 && x <= 1.0
       n = a + abs2(a ^ 2 + 4.0 * nc * x)
       if n > 0.0 n = Int(2.0 * nc * x / n)
@@ -5761,9 +5761,9 @@ function  gamma_nc1(x::Float64, a::Float64, nc::Float64, ByRef nc_derivative::Fl
 end
 
 function  comp_gamma_nc1(x::Float64, a::Float64, nc::Float64, ByRef nc_derivative::Float64)::Float64
-   Dim aa::Float64, bb::Float64, nc_dtemp::Float64
-   Dim n::Float64, p::Float64, w::Float64, s::Float64, ps::Float64
-   Dim result::Float64, term::Float64, ptx::Float64, ptnc::Float64
+   aa::Float64 = convert(Float64, 0), bb::Float64, nc_dtemp::Float64
+   n::Float64 = convert(Float64, 0), p::Float64, w::Float64, s::Float64, ps::Float64
+   result::Float64 = convert(Float64, 0), term::Float64, ptx::Float64, ptnc::Float64
    if a <= 1.0 && x <= 1.0
       n = a + abs2(a ^ 2 + 4.0 * nc * x)
       if n > 0.0 n = Int(2.0 * nc * x / n)
@@ -5843,8 +5843,8 @@ end
 
 function  inv_gamma_nc1(prob::Float64, a::Float64, nc::Float64)::Float64
 #Uses approx in A&S 26.4.27 for to get initial estimate the modified NR to improve it.
-Dim x::Float64, pr::Float64, dif::Float64
-Dim hi::Float64, lo::Float64, nc_derivative::Float64
+x::Float64 = convert(Float64, 0), pr::Float64, dif::Float64
+hi::Float64 = convert(Float64, 0), lo::Float64, nc_derivative::Float64
    if (prob > 0.5)
       inv_gamma_nc1 = comp_inv_gamma_nc1(1.0 - prob, a, nc)
       Exit Function
@@ -5902,8 +5902,8 @@ end
 
 function  comp_inv_gamma_nc1(prob::Float64, a::Float64, nc::Float64)::Float64
 #Uses approx in A&S 26.4.27 for to get initial estimate the modified NR to improve it.
-Dim x::Float64, pr::Float64, dif::Float64
-Dim hi::Float64, lo::Float64, nc_derivative::Float64
+x::Float64 = convert(Float64, 0), pr::Float64, dif::Float64
+hi::Float64 = convert(Float64, 0), lo::Float64, nc_derivative::Float64
    if (prob > 0.5)
       comp_inv_gamma_nc1 = inv_gamma_nc1(1.0 - prob, a, nc)
       Exit Function
@@ -5950,8 +5950,8 @@ end
 
 function  ncp_gamma_nc1(prob::Float64, x::Float64, a::Float64)::Float64
 #Uses Normal approx for difference of 2 poisson distributed variables  to get initial estimate the modified NR to improve it.
-Dim ncp::Float64, pr::Float64, dif::Float64, temp::Float64, deriv::Float64, b::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
-Dim hi::Float64, lo::Float64
+ncp::Float64 = convert(Float64, 0), pr::Float64, dif::Float64, temp::Float64, deriv::Float64, b::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
+hi::Float64 = convert(Float64, 0), lo::Float64
    if (prob > 0.5)
       ncp_gamma_nc1 = comp_ncp_gamma_nc1(1.0 - prob, x, a)
       Exit Function
@@ -6013,7 +6013,7 @@ Dim hi::Float64, lo::Float64
          dif = (pr / deriv) * logdif(pr, prob)
          if ncp + dif < lo
             dif = (lo - ncp) / 2.0
-            if Not checked_0_limit && (lo = 0.0)
+            if !checked_0_limit && (lo = 0.0)
                temp = cdf_gamma_nc(x, a, lo)
                if temp < prob
                   if (inv_gamma(prob, a, 1) <= x)
@@ -6028,7 +6028,7 @@ Dim hi::Float64, lo::Float64
             end
          elseif ncp + dif > hi
             dif = (hi - ncp) / 2.0
-            if Not checked_nc_limit && (hi = nc_limit)
+            if !checked_nc_limit && (hi = nc_limit)
                pr = cdf_gamma_nc(x, a, hi)
                if pr > prob
                   ncp_gamma_nc1 = [#VALUE!]
@@ -6053,8 +6053,8 @@ end
 
 function  comp_ncp_gamma_nc1(prob::Float64, x::Float64, a::Float64)::Float64
 #Uses Normal approx for difference of 2 poisson distributed variables  to get initial estimate the modified NR to improve it.
-Dim ncp::Float64, pr::Float64, dif::Float64, temp::Float64, deriv::Float64, b::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
-Dim hi::Float64, lo::Float64
+ncp::Float64 = convert(Float64, 0), pr::Float64, dif::Float64, temp::Float64, deriv::Float64, b::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
+hi::Float64 = convert(Float64, 0), lo::Float64
    if (prob > 0.5)
       comp_ncp_gamma_nc1 = ncp_gamma_nc1(1.0 - prob, x, a)
       Exit Function
@@ -6134,7 +6134,7 @@ Dim hi::Float64, lo::Float64
          dif = -(pr / deriv) * logdif(pr, prob)
          if ncp + dif < lo
             dif = (lo - ncp) / 2.0
-            if Not checked_0_limit && (lo = 0.0)
+            if !checked_0_limit && (lo = 0.0)
                temp = comp_cdf_gamma_nc(x, a, lo)
                if temp > prob
                   if (comp_inv_gamma(prob, a, 1) <= x)
@@ -6148,7 +6148,7 @@ Dim hi::Float64, lo::Float64
                end
             end
          elseif ncp + dif > hi
-            if Not checked_nc_limit && (hi = nc_limit)
+            if !checked_nc_limit && (hi = nc_limit)
                ncp = hi
                pr = comp_cdf_gamma_nc(x, a, ncp)
                if pr < prob
@@ -6173,9 +6173,9 @@ Dim hi::Float64, lo::Float64
    #Debug.Print "comp_ncp_gamma_nc1", comp_ncp_gamma_nc1
 end
 
-function pdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Float64
+function  pdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Float64
 #// Calculate pdf of noncentral gamma
-  Dim nc_derivative::Float64
+  nc_derivative::Float64 = convert(Float64, 0)
   if (shape_param < 0.0) || (nc_param < 0.0) || (nc_param > nc_limit)
      pdf_gamma_nc = [#VALUE!]
   elseif (x < 0.0)
@@ -6228,9 +6228,9 @@ function pdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Floa
   pdf_gamma_nc = GetRidOfMinusZeroes(pdf_gamma_nc)
 end
 
-function cdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Float64
+function  cdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Float64
 #// Calculate cdf of noncentral gamma
-  Dim nc_derivative::Float64
+  nc_derivative::Float64 = convert(Float64, 0)
   if (shape_param < 0.0) || (nc_param < 0.0) || (nc_param > nc_limit)
      cdf_gamma_nc = [#VALUE!]
   elseif (x < 0.0)
@@ -6253,9 +6253,9 @@ function cdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Floa
   cdf_gamma_nc = GetRidOfMinusZeroes(cdf_gamma_nc)
 end
 
-function comp_cdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Float64
+function  comp_cdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64)::Float64
 #// Calculate 1-cdf of noncentral gamma
-  Dim nc_derivative::Float64
+  nc_derivative::Float64 = convert(Float64, 0)
   if (shape_param < 0.0) || (nc_param < 0.0) || (nc_param > nc_limit)
      comp_cdf_gamma_nc = [#VALUE!]
   elseif (x < 0.0)
@@ -6278,7 +6278,7 @@ function comp_cdf_gamma_nc(x::Float64, shape_param::Float64, nc_param::Float64):
   comp_cdf_gamma_nc = GetRidOfMinusZeroes(comp_cdf_gamma_nc)
 end
 
-function inv_gamma_nc(prob::Float64, shape_param::Float64, nc_param::Float64)::Float64
+function  inv_gamma_nc(prob::Float64, shape_param::Float64, nc_param::Float64)::Float64
    if (shape_param < 0.0 || nc_param < 0.0 || nc_param > nc_limit || prob < 0.0 || prob >= 1.0)
       inv_gamma_nc = [#VALUE!]
    elseif (prob = 0.0 || shape_param = 0.0 && prob <= exp(-nc_param))
@@ -6289,7 +6289,7 @@ function inv_gamma_nc(prob::Float64, shape_param::Float64, nc_param::Float64)::F
    inv_gamma_nc = GetRidOfMinusZeroes(inv_gamma_nc)
 end
 
-function comp_inv_gamma_nc(prob::Float64, shape_param::Float64, nc_param::Float64)::Float64
+function  comp_inv_gamma_nc(prob::Float64, shape_param::Float64, nc_param::Float64)::Float64
    if (shape_param < 0.0 || nc_param < 0.0 || nc_param > nc_limit || prob <= 0.0 || prob > 1.0)
       comp_inv_gamma_nc = [#VALUE!]
    elseif (prob = 1.0 || shape_param = 0.0 && prob >= -expm1(-nc_param))
@@ -6300,7 +6300,7 @@ function comp_inv_gamma_nc(prob::Float64, shape_param::Float64, nc_param::Float6
    comp_inv_gamma_nc = GetRidOfMinusZeroes(comp_inv_gamma_nc)
 end
 
-function ncp_gamma_nc(prob::Float64, x::Float64, shape_param::Float64)::Float64
+function  ncp_gamma_nc(prob::Float64, x::Float64, shape_param::Float64)::Float64
    if (shape_param < 0.0 || x < 0.0 || prob <= 0.0 || prob > 1.0)
       ncp_gamma_nc = [#VALUE!]
    elseif (x = 0.0 && shape_param = 0.0)
@@ -6315,7 +6315,7 @@ function ncp_gamma_nc(prob::Float64, x::Float64, shape_param::Float64)::Float64
    ncp_gamma_nc = GetRidOfMinusZeroes(ncp_gamma_nc)
 end
 
-function comp_ncp_gamma_nc(prob::Float64, x::Float64, shape_param::Float64)::Float64
+function  comp_ncp_gamma_nc(prob::Float64, x::Float64, shape_param::Float64)::Float64
    if (shape_param < 0.0 || x < 0.0 || prob < 0.0 || prob >= 1.0)
       comp_ncp_gamma_nc = [#VALUE!]
    elseif (x = 0.0 && shape_param = 0.0)
@@ -6330,14 +6330,14 @@ function comp_ncp_gamma_nc(prob::Float64, x::Float64, shape_param::Float64)::Flo
    comp_ncp_gamma_nc = GetRidOfMinusZeroes(comp_ncp_gamma_nc)
 end
 
-function pdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
+function  pdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
 #// Calculate pdf of noncentral chi-square
   df = AlterForIntegralChecks_df(df)
   pdf_Chi2_nc = 0.5 * pdf_gamma_nc(x / 2.0, df / 2.0, nc / 2.0)
   pdf_Chi2_nc = GetRidOfMinusZeroes(pdf_Chi2_nc)
 end
 
-function cdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
+function  cdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
 #// Calculate cdf of noncentral chi-square
 #//   parametrized per Johnson & Kotz, SAS, etc. so that cdf_Chi2_nc(x,df,nc) = cdf_gamma_nc(x/2,df/2,nc/2)
 #//   if Xi ~ N(Di,1) independent, then sum(Xi,i=1..n) ~ Chi2_nc(n,nc) with nc=sum(Di,i=1..n)
@@ -6347,7 +6347,7 @@ function cdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
   cdf_Chi2_nc = GetRidOfMinusZeroes(cdf_Chi2_nc)
 end
 
-function comp_cdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
+function  comp_cdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
 #// Calculate 1-cdf of noncentral chi-square
 #//   parametrized per Johnson & Kotz, SAS, etc. so that cdf_Chi2_nc(x,df,nc) = cdf_gamma_nc(x/2,df/2,nc/2)
 #//   if Xi ~ N(Di,1) independent, then sum(Xi,i=1..n) ~ Chi2_nc(n,nc) with nc=sum(Di,i=1..n)
@@ -6357,25 +6357,25 @@ function comp_cdf_Chi2_nc(x::Float64, df::Float64, nc::Float64)::Float64
   comp_cdf_Chi2_nc = GetRidOfMinusZeroes(comp_cdf_Chi2_nc)
 end
 
-function inv_Chi2_nc(prob::Float64, df::Float64, nc::Float64)::Float64
+function  inv_Chi2_nc(prob::Float64, df::Float64, nc::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    inv_Chi2_nc = 2.0 * inv_gamma_nc(prob, df / 2.0, nc / 2.0)
    inv_Chi2_nc = GetRidOfMinusZeroes(inv_Chi2_nc)
 end
 
-function comp_inv_Chi2_nc(prob::Float64, df::Float64, nc::Float64)::Float64
+function  comp_inv_Chi2_nc(prob::Float64, df::Float64, nc::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    comp_inv_Chi2_nc = 2.0 * comp_inv_gamma_nc(prob, df / 2.0, nc / 2.0)
    comp_inv_Chi2_nc = GetRidOfMinusZeroes(comp_inv_Chi2_nc)
 end
 
-function ncp_Chi2_nc(prob::Float64, x::Float64, df::Float64)::Float64
+function  ncp_Chi2_nc(prob::Float64, x::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    ncp_Chi2_nc = 2.0 * ncp_gamma_nc(prob, x / 2.0, df / 2.0)
    ncp_Chi2_nc = GetRidOfMinusZeroes(ncp_Chi2_nc)
 end
 
-function comp_ncp_Chi2_nc(prob::Float64, x::Float64, df::Float64)::Float64
+function  comp_ncp_Chi2_nc(prob::Float64, x::Float64, df::Float64)::Float64
    df = AlterForIntegralChecks_df(df)
    comp_ncp_Chi2_nc = 2.0 * comp_ncp_gamma_nc(prob, x / 2.0, df / 2.0)
    comp_ncp_Chi2_nc = GetRidOfMinusZeroes(comp_ncp_Chi2_nc)
@@ -6383,9 +6383,9 @@ end
 
 function  beta_nc1(x::Float64, y::Float64, a::Float64, b::Float64, nc::Float64, ByRef nc_derivative::Float64)::Float64
 #y is 1-x but held accurately to avoid possible cancellation errors
-   Dim aa::Float64, bb::Float64, nc_dtemp::Float64
-   Dim n::Float64, p::Float64, w::Float64, s::Float64, ps::Float64
-   Dim result::Float64, term::Float64, ptx::Float64, ptnc::Float64
+   aa::Float64 = convert(Float64, 0), bb::Float64, nc_dtemp::Float64
+   n::Float64 = convert(Float64, 0), p::Float64, w::Float64, s::Float64, ps::Float64
+   result::Float64 = convert(Float64, 0), term::Float64, ptx::Float64, ptnc::Float64
    bb = (x * nc - 1.0) - a
    if bb < -1E+150
       n = a / bb
@@ -6484,9 +6484,9 @@ end
 
 function  comp_beta_nc1(x::Float64, y::Float64, a::Float64, b::Float64, nc::Float64, ByRef nc_derivative::Float64)::Float64
 #y is 1-x but held accurately to avoid possible cancellation errors
-   Dim aa::Float64, bb::Float64, nc_dtemp::Float64
-   Dim n::Float64, p::Float64, w::Float64, s::Float64, ps::Float64
-   Dim result::Float64, term::Float64, ptx::Float64, ptnc::Float64
+   aa::Float64 = convert(Float64, 0), bb::Float64, nc_dtemp::Float64
+   n::Float64 = convert(Float64, 0), p::Float64, w::Float64, s::Float64, ps::Float64
+   result::Float64 = convert(Float64, 0), term::Float64, ptx::Float64, ptnc::Float64
    bb = (x * nc - 1.0) - a
    if bb < -1E+150
       n = a / bb
@@ -6582,9 +6582,9 @@ end
 
 function  inv_beta_nc1(prob::Float64, a::Float64, b::Float64, nc::Float64, ByRef oneMinusP::Float64)::Float64
 #Uses approx in A&S 26.6.26 for to get initial estimate the modified NR to improve it.
-Dim x::Float64, y::Float64, pr::Float64, dif::Float64, temp::Float64
-Dim hip::Float64, lop::Float64
-Dim hix::Float64, lox::Float64, nc_derivative::Float64
+x::Float64 = convert(Float64, 0), y::Float64, pr::Float64, dif::Float64, temp::Float64
+hip::Float64 = convert(Float64, 0), lop::Float64
+hix::Float64 = convert(Float64, 0), lox::Float64, nc_derivative::Float64
    if (prob > 0.5)
       inv_beta_nc1 = comp_inv_beta_nc1(1.0 - prob, a, b, nc, oneMinusP)
       Exit Function
@@ -6671,9 +6671,9 @@ end
 
 function  comp_inv_beta_nc1(prob::Float64, a::Float64, b::Float64, nc::Float64, ByRef oneMinusP::Float64)::Float64
 #Uses approx in A&S 26.6.26 for to get initial estimate the modified NR to improve it.
-Dim x::Float64, y::Float64, pr::Float64, dif::Float64, temp::Float64
-Dim hip::Float64, lop::Float64
-Dim hix::Float64, lox::Float64, nc_derivative::Float64
+x::Float64 = convert(Float64, 0), y::Float64, pr::Float64, dif::Float64, temp::Float64
+hip::Float64 = convert(Float64, 0), lop::Float64
+hix::Float64 = convert(Float64, 0), lox::Float64, nc_derivative::Float64
    if (prob > 0.5)
       comp_inv_beta_nc1 = inv_beta_nc1(1.0 - prob, a, b, nc, oneMinusP)
       Exit Function
@@ -6790,7 +6790,7 @@ Dim hix::Float64, lox::Float64, nc_derivative::Float64
 end
 
 function  invBetaLessThanX(prob::Float64, x::Float64, y::Float64, a::Float64, b::Float64)::Float64
-   Dim oneMinusP::Float64
+   oneMinusP::Float64 = convert(Float64, 0)
    if x >= y
       if invcompbeta(b, a, prob, oneMinusP) >= y * (1.0 - 0.000000000000001)
          invBetaLessThanX = 0.0
@@ -6805,7 +6805,7 @@ function  invBetaLessThanX(prob::Float64, x::Float64, y::Float64, a::Float64, b:
 end
 
 function  compInvBetaLessThanX(prob::Float64, x::Float64, y::Float64, a::Float64, b::Float64)::Float64
-   Dim oneMinusP::Float64
+   oneMinusP::Float64 = convert(Float64, 0)
    if x >= y
       if invbeta(b, a, prob, oneMinusP) >= y * (1.0 - 0.000000000000001)
          compInvBetaLessThanX = 0.0
@@ -6821,8 +6821,8 @@ end
 
 function  ncp_beta_nc1(prob::Float64, x::Float64, y::Float64, a::Float64, b::Float64)::Float64
 #Uses Normal approx for difference of 2 a Negative Binomial and a poisson distributed variable to get initial estimate the modified NR to improve it.
-Dim ncp::Float64, pr::Float64, dif::Float64, temp::Float64, deriv::Float64, c::Float64, d::Float64, e::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
-Dim hi::Float64, lo::Float64, nc_derivative::Float64
+ncp::Float64 = convert(Float64, 0), pr::Float64, dif::Float64, temp::Float64, deriv::Float64, c::Float64, d::Float64, e::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
+hi::Float64 = convert(Float64, 0), lo::Float64, nc_derivative::Float64
    if (prob > 0.5)
       ncp_beta_nc1 = comp_ncp_beta_nc1(1.0 - prob, x, y, a, b)
       Exit Function
@@ -6966,7 +6966,7 @@ Dim hi::Float64, lo::Float64, nc_derivative::Float64
          dif = (pr / deriv) * logdif(pr, prob)
          if ncp + dif < lo
             dif = (lo - ncp) / 2.0
-            if Not checked_0_limit && (lo = 0.0)
+            if !checked_0_limit && (lo = 0.0)
                temp = cdf_beta_nc(x, a, b, lo)
                if temp < prob
                   ncp_beta_nc1 = invBetaLessThanX(prob, x, y, a, b)
@@ -6977,7 +6977,7 @@ Dim hi::Float64, lo::Float64, nc_derivative::Float64
             end
          elseif ncp + dif > hi
             dif = (hi - ncp) / 2.0
-            if Not checked_nc_limit && (hi = nc_limit)
+            if !checked_nc_limit && (hi = nc_limit)
                temp = cdf_beta_nc(x, a, b, hi)
                if temp > prob
                   ncp_beta_nc1 = [#VALUE!]
@@ -6996,8 +6996,8 @@ end
 
 function  comp_ncp_beta_nc1(prob::Float64, x::Float64, y::Float64, a::Float64, b::Float64)::Float64
 #Uses Normal approx for difference of 2 a Negative Binomial and a poisson distributed variable to get initial estimate the modified NR to improve it.
-Dim ncp::Float64, pr::Float64, dif::Float64, temp::Float64, deriv::Float64, c::Float64, d::Float64, e::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
-Dim hi::Float64, lo::Float64, nc_derivative::Float64
+ncp::Float64 = convert(Float64, 0), pr::Float64, dif::Float64, temp::Float64, deriv::Float64, c::Float64, d::Float64, e::Float64, sqarg::Float64, checked_nc_limit::Bool, checked_0_limit::Bool
+hi::Float64 = convert(Float64, 0), lo::Float64, nc_derivative::Float64
    if (prob > 0.5)
       comp_ncp_beta_nc1 = ncp_beta_nc1(1.0 - prob, x, y, a, b)
       Exit Function
@@ -7137,7 +7137,7 @@ Dim hi::Float64, lo::Float64, nc_derivative::Float64
          dif = -(pr / deriv) * logdif(pr, prob)
          if ncp + dif < lo
             dif = (lo - ncp) / 2.0
-            if Not checked_0_limit && (lo = 0.0)
+            if !checked_0_limit && (lo = 0.0)
                temp = comp_cdf_beta_nc(x, a, b, lo)
                if temp > prob
                   comp_ncp_beta_nc1 = compInvBetaLessThanX(prob, x, y, a, b)
@@ -7148,7 +7148,7 @@ Dim hi::Float64, lo::Float64, nc_derivative::Float64
             end
          elseif ncp + dif > hi
             dif = (hi - ncp) / 2.0
-            if Not checked_nc_limit && (hi = nc_limit)
+            if !checked_nc_limit && (hi = nc_limit)
                temp = comp_cdf_beta_nc(x, a, b, hi)
                if temp < prob
                   comp_ncp_beta_nc1 = [#VALUE!]
@@ -7165,7 +7165,7 @@ Dim hi::Float64, lo::Float64, nc_derivative::Float64
    #Debug.Print "comp_ncp_beta_nc1", comp_ncp_beta_nc1
 end
 
-function pdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
+function  pdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
   if (shape_param1 < 0.0) || (shape_param2 < 0.0) || (nc_param < 0.0) || (nc_param > nc_limit) || ((shape_param1 = 0.0) && (shape_param2 = 0.0))
      pdf_beta_nc = [#VALUE!]
   elseif (x < 0.0 || x > 1.0)
@@ -7177,7 +7177,7 @@ function pdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, n
   elseif (x = 1.0)
      pdf_beta_nc = pdf_beta(x, shape_param1, shape_param2)
   else
-     Dim nc_derivative::Float64
+     nc_derivative::Float64 = convert(Float64, 0)
      if (shape_param1 < 1.0 || x * shape_param2 <= (1.0 - x) * (shape_param1 + nc_param))
         pdf_beta_nc = beta_nc1(x, 1.0 - x, shape_param1, shape_param2, nc_param, nc_derivative)
      else
@@ -7188,8 +7188,8 @@ function pdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, n
   pdf_beta_nc = GetRidOfMinusZeroes(pdf_beta_nc)
 end
 
-function cdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
-  Dim nc_derivative::Float64
+function  cdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
+  nc_derivative::Float64 = convert(Float64, 0)
   if (shape_param1 < 0.0) || (shape_param2 < 0.0) || (nc_param < 0.0) || (nc_param > nc_limit) || ((shape_param1 = 0.0) && (shape_param2 = 0.0))
      cdf_beta_nc = [#VALUE!]
   elseif (x < 0.0)
@@ -7210,8 +7210,8 @@ function cdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, n
   cdf_beta_nc = GetRidOfMinusZeroes(cdf_beta_nc)
 end
 
-function comp_cdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
-  Dim nc_derivative::Float64
+function  comp_cdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
+  nc_derivative::Float64 = convert(Float64, 0)
   if (shape_param1 < 0.0) || (shape_param2 < 0.0) || (nc_param < 0.0) || (nc_param > nc_limit) || ((shape_param1 = 0.0) && (shape_param2 = 0.0))
      comp_cdf_beta_nc = [#VALUE!]
   elseif (x < 0.0)
@@ -7232,8 +7232,8 @@ function comp_cdf_beta_nc(x::Float64, shape_param1::Float64, shape_param2::Float
   comp_cdf_beta_nc = GetRidOfMinusZeroes(comp_cdf_beta_nc)
 end
 
-function inv_beta_nc(prob::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
-  Dim oneMinusP::Float64
+function  inv_beta_nc(prob::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
+  oneMinusP::Float64 = convert(Float64, 0)
   if (shape_param1 < 0.0) || (shape_param2 <= 0.0) || (nc_param < 0.0) || (nc_param > nc_limit) || (prob < 0.0) || (prob > 1.0)
      inv_beta_nc = [#VALUE!]
   elseif (prob = 0.0 || shape_param1 = 0.0 && prob <= exp(-nc_param))
@@ -7248,8 +7248,8 @@ function inv_beta_nc(prob::Float64, shape_param1::Float64, shape_param2::Float64
   inv_beta_nc = GetRidOfMinusZeroes(inv_beta_nc)
 end
 
-function comp_inv_beta_nc(prob::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
-  Dim oneMinusP::Float64
+function  comp_inv_beta_nc(prob::Float64, shape_param1::Float64, shape_param2::Float64, nc_param::Float64)::Float64
+  oneMinusP::Float64 = convert(Float64, 0)
   if (shape_param1 < 0.0) || (shape_param2 <= 0.0) || (nc_param < 0.0) || (nc_param > nc_limit) || (prob < 0.0) || (prob > 1.0)
      comp_inv_beta_nc = [#VALUE!]
   elseif (prob = 1.0 || shape_param1 = 0.0 && prob >= -expm1(-nc_param))
@@ -7264,7 +7264,7 @@ function comp_inv_beta_nc(prob::Float64, shape_param1::Float64, shape_param2::Fl
   comp_inv_beta_nc = GetRidOfMinusZeroes(comp_inv_beta_nc)
 end
 
-function ncp_beta_nc(prob::Float64, x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  ncp_beta_nc(prob::Float64, x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
   if (shape_param1 < 0.0) || (shape_param2 <= 0.0) || (x < 0.0) || (x >= 1.0) || (prob <= 0.0) || (prob > 1.0)
      ncp_beta_nc = [#VALUE!]
   elseif (x = 0.0 && shape_param1 = 0.0)
@@ -7277,7 +7277,7 @@ function ncp_beta_nc(prob::Float64, x::Float64, shape_param1::Float64, shape_par
   ncp_beta_nc = GetRidOfMinusZeroes(ncp_beta_nc)
 end
 
-function comp_ncp_beta_nc(prob::Float64, x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
+function  comp_ncp_beta_nc(prob::Float64, x::Float64, shape_param1::Float64, shape_param2::Float64)::Float64
   if (shape_param1 < 0.0) || (shape_param2 <= 0.0) || (x < 0.0) || (x >= 1.0) || (prob < 0.0) || (prob >= 1.0)
      comp_ncp_beta_nc = [#VALUE!]
   elseif (x = 0.0 && shape_param1 = 0.0)
@@ -7290,7 +7290,7 @@ function comp_ncp_beta_nc(prob::Float64, x::Float64, shape_param1::Float64, shap
   comp_ncp_beta_nc = GetRidOfMinusZeroes(comp_ncp_beta_nc)
 end
 
-function pdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
+function  pdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || (nc < 0.0) || (nc > 2.0 * nc_limit))
@@ -7300,7 +7300,7 @@ function pdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Floa
    elseif (x = 0.0 || nc = 0.0)
       pdf_fdist_nc = exp(-nc / 2.0) * pdf_fdist(x, df1, df2)
    else
-      Dim p::Float64, q::Float64, nc_derivative::Float64
+      p::Float64 = convert(Float64, 0), q::Float64, nc_derivative::Float64
       if x > 1.0
          q = df2 / x
          p = q + df1
@@ -7322,7 +7322,7 @@ function pdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Floa
    pdf_fdist_nc = GetRidOfMinusZeroes(pdf_fdist_nc)
 end
 
-function cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
+function  cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || (nc < 0.0) || (nc > 2.0 * nc_limit))
@@ -7330,7 +7330,7 @@ function cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Floa
    elseif (x <= 0.0)
       cdf_fdist_nc = 0.0
    else
-      Dim p::Float64, q::Float64, nc_derivative::Float64
+      p::Float64 = convert(Float64, 0), q::Float64, nc_derivative::Float64
       if x > 1.0
          q = df2 / x
          p = q + df1
@@ -7362,7 +7362,7 @@ function cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Floa
    cdf_fdist_nc = GetRidOfMinusZeroes(cdf_fdist_nc)
 end
 
-function comp_cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
+function  comp_cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || (nc < 0.0) || (nc > 2.0 * nc_limit))
@@ -7370,7 +7370,7 @@ function comp_cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64):
    elseif (x <= 0.0)
       comp_cdf_fdist_nc = 1.0
    else
-      Dim p::Float64, q::Float64, nc_derivative::Float64
+      p::Float64 = convert(Float64, 0), q::Float64, nc_derivative::Float64
       if x > 1.0
          q = df2 / x
          p = q + df1
@@ -7402,7 +7402,7 @@ function comp_cdf_fdist_nc(x::Float64, df1::Float64, df2::Float64, nc::Float64):
    comp_cdf_fdist_nc = GetRidOfMinusZeroes(comp_cdf_fdist_nc)
 end
 
-function inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
+function  inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || (nc < 0.0) || (nc > 2.0 * nc_limit) || prob < 0.0 || prob >= 1.0)
@@ -7410,7 +7410,7 @@ function inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float64)::F
    elseif (prob = 0.0)
       inv_fdist_nc = 0.0
    else
-      Dim temp::Float64, oneMinusP::Float64
+      temp::Float64 = convert(Float64, 0), oneMinusP::Float64
       df1 = df1 / 2.0
       df2 = df2 / 2.0
       if nc = 0.0
@@ -7424,7 +7424,7 @@ function inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float64)::F
    inv_fdist_nc = GetRidOfMinusZeroes(inv_fdist_nc)
 end
 
-function comp_inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
+function  comp_inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float64)::Float64
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
    if (df1 <= 0.0 || df2 <= 0.0 || (nc < 0.0) || (nc > 2.0 * nc_limit) || prob <= 0.0 || prob > 1.0)
@@ -7432,7 +7432,7 @@ function comp_inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float6
    elseif (prob = 1.0)
       comp_inv_fdist_nc = 0.0
    else
-      Dim temp::Float64, oneMinusP::Float64
+      temp::Float64 = convert(Float64, 0), oneMinusP::Float64
       df1 = df1 / 2.0
       df2 = df2 / 2.0
       if nc = 0.0
@@ -7446,13 +7446,13 @@ function comp_inv_fdist_nc(prob::Float64, df1::Float64, df2::Float64, nc::Float6
    comp_inv_fdist_nc = GetRidOfMinusZeroes(comp_inv_fdist_nc)
 end
 
-function ncp_fdist_nc(prob::Float64, x::Float64, df1::Float64, df2::Float64)::Float64
+function  ncp_fdist_nc(prob::Float64, x::Float64, df1::Float64, df2::Float64)::Float64
   df1 = AlterForIntegralChecks_df(df1)
   df2 = AlterForIntegralChecks_df(df2)
   if (df1 <= 0.0) || (df2 <= 0.0) || (x <= 0.0) || (prob <= 0.0) || (prob >= 1.0)
      ncp_fdist_nc = [#VALUE!]
   else
-     Dim p::Float64, q::Float64
+     p::Float64 = convert(Float64, 0), q::Float64
      if x > 1.0
         q = df2 / x
         p = q + df1
@@ -7471,13 +7471,13 @@ function ncp_fdist_nc(prob::Float64, x::Float64, df1::Float64, df2::Float64)::Fl
   ncp_fdist_nc = GetRidOfMinusZeroes(ncp_fdist_nc)
 end
 
-function comp_ncp_fdist_nc(prob::Float64, x::Float64, df1::Float64, df2::Float64)::Float64
+function  comp_ncp_fdist_nc(prob::Float64, x::Float64, df1::Float64, df2::Float64)::Float64
   df1 = AlterForIntegralChecks_df(df1)
   df2 = AlterForIntegralChecks_df(df2)
   if (df1 <= 0.0) || (df2 <= 0.0) || (x <= 0.0) || (prob <= 0.0) || (prob >= 1.0)
      comp_ncp_fdist_nc = [#VALUE!]
   else
-     Dim p::Float64, q::Float64
+     p::Float64 = convert(Float64, 0), q::Float64
      if x > 1.0
         q = df2 / x
         p = q + df1
@@ -7499,11 +7499,11 @@ end
 function  t_nc1(t::Float64, df::Float64, nct::Float64, ByRef nc_derivative::Float64)::Float64
 #y is 1-x but held accurately to avoid possible cancellation errors
 #nc_derivative holds t * derivative
-   Dim aa::Float64, bb::Float64, nc_dtemp::Float64
-   Dim n::Float64, p::Float64, q::Float64, w::Float64, V::Float64, r::Float64, s::Float64, ps::Float64
-   Dim result1::Float64, result2::Float64, term1::Float64, term2::Float64, ptnc::Float64, qtnc::Float64, ptx::Float64, qtx::Float64
-   Dim a::Float64, b::Float64, x::Float64, y::Float64, nc::Float64
-   Dim save_result1::Float64, save_result2::Float64, phi::Float64, vScale::Float64
+   aa::Float64 = convert(Float64, 0), bb::Float64, nc_dtemp::Float64
+   n::Float64 = convert(Float64, 0), p::Float64, q::Float64, w::Float64, V::Float64, r::Float64, s::Float64, ps::Float64
+   result1::Float64 = convert(Float64, 0), result2::Float64, term1::Float64, term2::Float64, ptnc::Float64, qtnc::Float64, ptx::Float64, qtx::Float64
+   a::Float64 = convert(Float64, 0), b::Float64, x::Float64, y::Float64, nc::Float64
+   save_result1::Float64 = convert(Float64, 0), save_result2::Float64, phi::Float64, vScale::Float64
    phi = cnormal(-abs(nct))
    a = 0.5
    b = df / 2.0
@@ -7670,11 +7670,11 @@ end
 function  comp_t_nc1(t::Float64, df::Float64, nct::Float64, ByRef nc_derivative::Float64)::Float64
 #y is 1-x but held accurately to avoid possible cancellation errors
 #nc_derivative holds t * derivative
-   Dim aa::Float64, bb::Float64, nc_dtemp::Float64
-   Dim n::Float64, p::Float64, q::Float64, w::Float64, V::Float64, r::Float64, s::Float64, ps::Float64
-   Dim result1::Float64, result2::Float64, term1::Float64, term2::Float64, ptnc::Float64, qtnc::Float64, ptx::Float64, qtx::Float64
-   Dim a::Float64, b::Float64, x::Float64, y::Float64, nc::Float64
-   Dim save_result1::Float64, save_result2::Float64, vScale::Float64
+   aa::Float64 = convert(Float64, 0), bb::Float64, nc_dtemp::Float64
+   n::Float64 = convert(Float64, 0), p::Float64, q::Float64, w::Float64, V::Float64, r::Float64, s::Float64, ps::Float64
+   result1::Float64 = convert(Float64, 0), result2::Float64, term1::Float64, term2::Float64, ptnc::Float64, qtnc::Float64, ptx::Float64, qtx::Float64
+   a::Float64 = convert(Float64, 0), b::Float64, x::Float64, y::Float64, nc::Float64
+   save_result1::Float64 = convert(Float64, 0), save_result2::Float64, vScale::Float64
    a = 0.5
    b = df / 2.0
    if abs(t) >= min(1.0, df)
@@ -7832,8 +7832,8 @@ end
 
 function  inv_t_nc1(prob::Float64, df::Float64, nc::Float64, ByRef oneMinusP::Float64)::Float64
 #Uses approximations in A&S 26.6.26 and 26.7.10 for to get initial estimate, the modified NR to improve it.
-Dim x::Float64, y::Float64, pr::Float64, dif::Float64, temp::Float64, nc_beta_param::Float64
-Dim hix::Float64, lox::Float64, test::Float64, nc_derivative::Float64
+x::Float64 = convert(Float64, 0), y::Float64, pr::Float64, dif::Float64, temp::Float64, nc_beta_param::Float64
+hix::Float64 = convert(Float64, 0), lox::Float64, test::Float64, nc_derivative::Float64
    if (prob > 0.5)
       inv_t_nc1 = comp_inv_t_nc1(1.0 - prob, df, nc, oneMinusP)
       Exit Function
@@ -7918,8 +7918,8 @@ end
 
 function  comp_inv_t_nc1(prob::Float64, df::Float64, nc::Float64, ByRef oneMinusP::Float64)::Float64
 #Uses approximations in A&S 26.6.26 and 26.7.10 for to get initial estimate, the modified NR to improve it.
-Dim x::Float64, y::Float64, pr::Float64, dif::Float64, temp::Float64, nc_beta_param::Float64
-Dim hix::Float64, lox::Float64, test::Float64, nc_derivative::Float64
+x::Float64 = convert(Float64, 0), y::Float64, pr::Float64, dif::Float64, temp::Float64, nc_beta_param::Float64
+hix::Float64 = convert(Float64, 0), lox::Float64, test::Float64, nc_derivative::Float64
    if (prob > 0.5)
       comp_inv_t_nc1 = inv_t_nc1(1.0 - prob, df, nc, oneMinusP)
       Exit Function
@@ -8006,8 +8006,8 @@ end
 
 function  ncp_t_nc1(prob::Float64, t::Float64, df::Float64)::Float64
 #Uses Normal approx for non-central t (A&S 26.7.10) to get initial estimate the modified NR to improve it.
-Dim ncp::Float64, pr::Float64, dif::Float64, temp::Float64, deriv::Float64, checked_tnc_limit::Bool, checked_0_limit::Bool
-Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
+ncp::Float64 = convert(Float64, 0), pr::Float64, dif::Float64, temp::Float64, deriv::Float64, checked_tnc_limit::Bool, checked_0_limit::Bool
+hi::Float64 = convert(Float64, 0), lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
    if (prob > 0.5)
       ncp_t_nc1 = comp_ncp_t_nc1(1.0 - prob, t, df)
       Exit Function
@@ -8089,7 +8089,7 @@ Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
          dif = (pr / deriv) * logdif(pr, prob)
          if ncp + dif < lo
             dif = (lo - ncp) / 2.0
-            if Not checked_0_limit && (lo = 0.0)
+            if !checked_0_limit && (lo = 0.0)
                temp = cdf_t_nc(t, df, lo)
                if temp < prob
                   if invtdist(prob, df) <= t
@@ -8105,7 +8105,7 @@ Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
             end
          elseif ncp + dif > hi
             dif = (hi - ncp) / 2.0
-            if Not checked_tnc_limit && (hi = tnc_limit)
+            if !checked_tnc_limit && (hi = tnc_limit)
                temp = cdf_t_nc(t, df, hi)
                if temp > prob
                   ncp_t_nc1 = [#VALUE!]
@@ -8125,8 +8125,8 @@ end
 
 function  comp_ncp_t_nc1(prob::Float64, t::Float64, df::Float64)::Float64
 #Uses Normal approx for non-central t (A&S 26.7.10) to get initial estimate the modified NR to improve it.
-Dim ncp::Float64, pr::Float64, dif::Float64, temp::Float64, temp1::Float64, temp2::Float64, deriv::Float64, checked_tnc_limit::Bool, checked_0_limit::Bool
-Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
+ncp::Float64 = convert(Float64, 0), pr::Float64, dif::Float64, temp::Float64, temp1::Float64, temp2::Float64, deriv::Float64, checked_tnc_limit::Bool, checked_0_limit::Bool
+hi::Float64 = convert(Float64, 0), lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
    if (prob > 0.5)
       comp_ncp_t_nc1 = ncp_t_nc1(1.0 - prob, t, df)
       Exit Function
@@ -8249,7 +8249,7 @@ Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
          dif = -(pr / deriv) * logdif(pr, prob)
          if ncp + dif < lo
             dif = (lo - ncp) / 2.0
-            if Not checked_0_limit && (lo = 0.0)
+            if !checked_0_limit && (lo = 0.0)
                temp = comp_cdf_t_nc(t, df, lo)
                if temp > prob
                   if -invtdist(prob, df) <= t
@@ -8265,7 +8265,7 @@ Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
             end
          elseif ncp + dif > hi
             dif = (hi - ncp) / 2.0
-            if Not checked_tnc_limit && (hi = tnc_limit)
+            if !checked_tnc_limit && (hi = tnc_limit)
                temp = comp_cdf_t_nc(t, df, hi)
                if temp < prob
                   comp_ncp_t_nc1 = [#VALUE!]
@@ -8283,11 +8283,11 @@ Dim hi::Float64, lo::Float64, tnc_limit::Float64, x::Float64, y::Float64
    #Debug.Print "comp_ncp_t_nc1", comp_ncp_t_nc1
 end
 
-function pdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
+function  pdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
 #// Calculate pdf of noncentral t
 #// Deliberately set not to calculate when x and nc_param have opposite signs as the algorithm used is prone to cancellation error in these circumstances.
 #// The user can access t_nc1,comp_t_nc1 directly and check on the accuracy of the results, if required
-  Dim nc_derivative::Float64
+  nc_derivative::Float64 = convert(Float64, 0)
   df = AlterForIntegralChecks_df(df)
   if (x < 0.0) && (nc_param <= 0.0)
      pdf_t_nc = pdf_t_nc(-x, df, -nc_param)
@@ -8314,11 +8314,11 @@ function pdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
   pdf_t_nc = GetRidOfMinusZeroes(pdf_t_nc)
 end
 
-function cdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
+function  cdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
 #// Calculate cdf of noncentral t
 #// Deliberately set not to calculate when x and nc_param have opposite signs as the algorithm used is prone to cancellation error in these circumstances.
 #// The user can access t_nc1,comp_t_nc1 directly and check on the accuracy of the results, if required
-  Dim tdistDensity::Float64, nc_derivative::Float64
+  tdistDensity::Float64 = convert(Float64, 0), nc_derivative::Float64
   df = AlterForIntegralChecks_df(df)
   if (nc_param = 0.0)
      cdf_t_nc = tdist(x, df, tdistDensity)
@@ -8336,11 +8336,11 @@ function cdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
   cdf_t_nc = GetRidOfMinusZeroes(cdf_t_nc)
 end
 
-function comp_cdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
+function  comp_cdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
 #// Calculate 1-cdf of noncentral t
 #// Deliberately set not to calculate when x and nc_param have opposite signs as the algorithm used is prone to cancellation error in these circumstances.
 #// The user can access t_nc1,comp_t_nc1 directly and check on the accuracy of the results, if required
-  Dim tdistDensity::Float64, nc_derivative::Float64
+  tdistDensity::Float64 = convert(Float64, 0), nc_derivative::Float64
   df = AlterForIntegralChecks_df(df)
   if (nc_param = 0.0)
      comp_cdf_t_nc = tdist(-x, df, tdistDensity)
@@ -8358,7 +8358,7 @@ function comp_cdf_t_nc(x::Float64, df::Float64, nc_param::Float64)::Float64
   comp_cdf_t_nc = GetRidOfMinusZeroes(comp_cdf_t_nc)
 end
 
-function inv_t_nc(prob::Float64, df::Float64, nc_param::Float64)::Float64
+function  inv_t_nc(prob::Float64, df::Float64, nc_param::Float64)::Float64
   df = AlterForIntegralChecks_df(df)
   if (nc_param = 0.0)
      inv_t_nc = invtdist(prob, df)
@@ -8369,13 +8369,13 @@ function inv_t_nc(prob::Float64, df::Float64, nc_param::Float64)::Float64
   elseif (invcnormal(prob) < -nc_param)
      inv_t_nc = [#VALUE!]
   else
-     Dim oneMinusP::Float64
+     oneMinusP::Float64 = convert(Float64, 0)
      inv_t_nc = inv_t_nc1(prob, df, nc_param, oneMinusP)
   end
   inv_t_nc = GetRidOfMinusZeroes(inv_t_nc)
 end
 
-function comp_inv_t_nc(prob::Float64, df::Float64, nc_param::Float64)::Float64
+function  comp_inv_t_nc(prob::Float64, df::Float64, nc_param::Float64)::Float64
   df = AlterForIntegralChecks_df(df)
   if (nc_param = 0.0)
      comp_inv_t_nc = -invtdist(prob, df)
@@ -8386,13 +8386,13 @@ function comp_inv_t_nc(prob::Float64, df::Float64, nc_param::Float64)::Float64
   elseif (invcnormal(prob) > nc_param)
      comp_inv_t_nc = [#VALUE!]
   else
-     Dim oneMinusP::Float64
+     oneMinusP::Float64 = convert(Float64, 0)
      comp_inv_t_nc = comp_inv_t_nc1(prob, df, nc_param, oneMinusP)
   end
   comp_inv_t_nc = GetRidOfMinusZeroes(comp_inv_t_nc)
 end
 
-function ncp_t_nc(prob::Float64, x::Float64, df::Float64)::Float64
+function  ncp_t_nc(prob::Float64, x::Float64, df::Float64)::Float64
   df = AlterForIntegralChecks_df(df)
   if (x = 0.0 && prob > 0.5)
      ncp_t_nc = -invcnormal(prob)
@@ -8406,7 +8406,7 @@ function ncp_t_nc(prob::Float64, x::Float64, df::Float64)::Float64
   ncp_t_nc = GetRidOfMinusZeroes(ncp_t_nc)
 end
 
-function comp_ncp_t_nc(prob::Float64, x::Float64, df::Float64)::Float64
+function  comp_ncp_t_nc(prob::Float64, x::Float64, df::Float64)::Float64
   df = AlterForIntegralChecks_df(df)
   if (x = 0.0)
      comp_ncp_t_nc = invcnormal(prob)
@@ -8420,8 +8420,8 @@ function comp_ncp_t_nc(prob::Float64, x::Float64, df::Float64)::Float64
   comp_ncp_t_nc = GetRidOfMinusZeroes(comp_ncp_t_nc)
 end
 
-function pmf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64)::Float64
-   Dim p::Float64, q::Float64, dfm::Float64
+function  pmf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64)::Float64
+   p::Float64 = convert(Float64, 0), q::Float64, dfm::Float64
    q = gamma_scale / (1.0 + gamma_scale)
    p = 1.0 / (1.0 + gamma_scale)
    i = AlterForIntegralChecks_Others(i)
@@ -8440,8 +8440,8 @@ function pmf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64
    pmf_GammaPoisson = GetRidOfMinusZeroes(pmf_GammaPoisson)
 end
 
-function cdf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64)::Float64
-   Dim p::Float64, q::Float64
+function  cdf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64)::Float64
+   p::Float64 = convert(Float64, 0), q::Float64
    q = gamma_scale / (1.0 + gamma_scale)
    p = 1.0 / (1.0 + gamma_scale)
    i = Int(i)
@@ -8457,8 +8457,8 @@ function cdf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64
    cdf_GammaPoisson = GetRidOfMinusZeroes(cdf_GammaPoisson)
 end
 
-function comp_cdf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64)::Float64
-   Dim p::Float64, q::Float64
+function  comp_cdf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Float64)::Float64
+   p::Float64 = convert(Float64, 0), q::Float64
    q = gamma_scale / (1.0 + gamma_scale)
    p = 1.0 / (1.0 + gamma_scale)
    i = Int(i)
@@ -8474,8 +8474,8 @@ function comp_cdf_GammaPoisson(i::Float64, gamma_shape::Float64, gamma_scale::Fl
    comp_cdf_GammaPoisson = GetRidOfMinusZeroes(comp_cdf_GammaPoisson)
 end
 
-function crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit_prob::Float64)::Float64
-   Dim p::Float64, q::Float64
+function  crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit_prob::Float64)::Float64
+   p::Float64 = convert(Float64, 0), q::Float64
    q = gamma_scale / (1.0 + gamma_scale)
    p = 1.0 / (1.0 + gamma_scale)
    if (gamma_shape < 0.0 || gamma_scale < 0.0)
@@ -8485,7 +8485,7 @@ function crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit_prob
    elseif (crit_prob = 0.0)
       crit_GammaPoisson = [#VALUE!]
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       crit_GammaPoisson = critnegbinom(gamma_shape, p, q, crit_prob)
       i = crit_GammaPoisson
       if p <= q
@@ -8511,8 +8511,8 @@ function crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit_prob
    crit_GammaPoisson = GetRidOfMinusZeroes(crit_GammaPoisson)
 end
 
-function comp_crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit_prob::Float64)::Float64
-   Dim p::Float64, q::Float64
+function  comp_crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit_prob::Float64)::Float64
+   p::Float64 = convert(Float64, 0), q::Float64
    q = gamma_scale / (1.0 + gamma_scale)
    p = 1.0 / (1.0 + gamma_scale)
    if (gamma_shape < 0.0 || gamma_scale < 0.0)
@@ -8522,7 +8522,7 @@ function comp_crit_GammaPoisson(gamma_shape::Float64, gamma_scale::Float64, crit
    elseif (crit_prob = 1.0)
       comp_crit_GammaPoisson = [#VALUE!]
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       comp_crit_GammaPoisson = critcompnegbinom(gamma_shape, p, q, crit_prob)
       i = comp_crit_GammaPoisson
       if p <= q
@@ -8558,7 +8558,7 @@ function  PBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float6
     PBNB = (beta_shape2 / (beta_shape1 + beta_shape2)) * (r / (beta_shape1 + r)) * beta_shape1 * (i + beta_shape1 + r + beta_shape2) / ((i + r) * (i + beta_shape2)) * hTerm
 end
 
-function pmf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+function  pmf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
    i = AlterForIntegralChecks_Others(i)
    if (r <= 0.0 || beta_shape1 <= 0.0 || beta_shape2 <= 0.0)
       pmf_BetaNegativeBinomial = [#VALUE!]
@@ -8571,8 +8571,8 @@ function pmf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, 
 end
 
 function  CBNB0(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64, toBeAdded::Float64)::Float64
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
-   Dim mrb2::Float64, other::Float64, temp::Float64
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+   mrb2::Float64 = convert(Float64, 0), other::Float64, temp::Float64
    if (r < 2.0 || beta_shape2 < 2.0)
 #One assumption here that i is integral or greater than 4.
       mrb2 = max(r, beta_shape2)
@@ -8615,7 +8615,7 @@ function  CBNB0(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float
 end
 
 function  CBNB2(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
-   Dim j::Float64, ss::Float64, bs2::Float64, temp::Float64, d1::Float64, d2::Float64, d_count::Float64, pbbval::Float64
+   j::Float64 = convert(Float64, 0), ss::Float64, bs2::Float64, temp::Float64, d1::Float64, d2::Float64, d_count::Float64, pbbval::Float64
    #In general may be a good idea to take min(i, beta_shape1) down to just above 0 and then work on max(i, beta_shape1)
    ss = min(r, beta_shape2)
    bs2 = max(r, beta_shape2)
@@ -8667,7 +8667,7 @@ function  CBNB2(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float
    Exit Function
 end
 
-function cdf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+function  cdf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
    i = Int(i)
    if (r <= 0.0 || beta_shape1 <= 0.0 || beta_shape2 <= 0.0)
       cdf_BetaNegativeBinomial = [#VALUE!]
@@ -8679,9 +8679,9 @@ function cdf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, 
    cdf_BetaNegativeBinomial = GetRidOfMinusZeroes(cdf_BetaNegativeBinomial)
 end
 
-function comp_cdf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
-   Dim mrb2::Float64, other::Float64, temp::Float64, mnib1::Float64, mxib1::Float64, swap::Float64, max_iterations::Float64
+function  comp_cdf_BetaNegativeBinomial(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+   mrb2::Float64 = convert(Float64, 0), other::Float64, temp::Float64, mnib1::Float64, mxib1::Float64, swap::Float64, max_iterations::Float64
    i = Int(i)
    mrb2 = max(r, beta_shape2)
    other = min(r, beta_shape2)
@@ -8791,8 +8791,8 @@ function  critbetanegbinomial(a::Float64, b::Float64, r::Float64, cprob::Float64
       critbetanegbinomial = critcompbetanegbinomial(a, b, r, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64, temp::Float64, temp2::Float64, oneMinusP::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0), temp::Float64, temp2::Float64, oneMinusP::Float64
    if b > r
       i = b
       b = r
@@ -8937,8 +8937,8 @@ function  critcompbetanegbinomial(a::Float64, b::Float64, r::Float64, cprob::Flo
       critcompbetanegbinomial = critbetanegbinomial(a, b, r, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64, i_smallest::Float64
-   Dim i::Float64, temp::Float64, temp2::Float64, oneMinusP::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64, i_smallest::Float64
+   i::Float64 = convert(Float64, 0), temp::Float64, temp2::Float64, oneMinusP::Float64
    i_smallest = 0.0
    if b > r
       i = b
@@ -9058,7 +9058,7 @@ function  critcompbetanegbinomial(a::Float64, b::Float64, r::Float64, cprob::Flo
    end
 end
 
-function crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
+function  crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || r <= 0.0)
       crit_BetaNegativeBinomial = [#VALUE!]
    elseif (crit_prob < 0.0 || crit_prob >= 1.0)
@@ -9066,7 +9066,7 @@ function crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_shape2
    elseif (crit_prob = 0.0)
       crit_BetaNegativeBinomial = [#VALUE!]
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       i = critbetanegbinomial(beta_shape1, beta_shape2, r, crit_prob)
       crit_BetaNegativeBinomial = i
       pr = cdf_BetaNegativeBinomial(i, r, beta_shape1, beta_shape2)
@@ -9084,7 +9084,7 @@ function crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_shape2
    crit_BetaNegativeBinomial = GetRidOfMinusZeroes(crit_BetaNegativeBinomial)
 end
 
-function comp_crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
+function  comp_crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || r <= 0.0)
       comp_crit_BetaNegativeBinomial = [#VALUE!]
    elseif (crit_prob <= 0.0 || crit_prob > 1.0)
@@ -9092,7 +9092,7 @@ function comp_crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_s
    elseif (crit_prob = 1.0)
       comp_crit_BetaNegativeBinomial = 0.0
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       i = critcompbetanegbinomial(beta_shape1, beta_shape2, r, crit_prob)
       comp_crit_BetaNegativeBinomial = i
       pr = comp_cdf_BetaNegativeBinomial(i, r, beta_shape1, beta_shape2)
@@ -9110,7 +9110,7 @@ function comp_crit_BetaNegativeBinomial(r::Float64, beta_shape1::Float64, beta_s
    comp_crit_BetaNegativeBinomial = GetRidOfMinusZeroes(comp_crit_BetaNegativeBinomial)
 end
 
-function pmf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+function  pmf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
    i = AlterForIntegralChecks_Others(i)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || sample_size < 0.0)
@@ -9123,7 +9123,7 @@ function pmf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64
    pmf_BetaBinomial = GetRidOfMinusZeroes(pmf_BetaBinomial)
 end
 
-function cdf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+function  cdf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
    i = Int(i)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || sample_size < 0.0)
@@ -9136,7 +9136,7 @@ function cdf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64
    end
 end
 
-function comp_cdf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+function  comp_cdf_BetaBinomial(i::Float64, sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
    i = Int(i)
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || sample_size < 0.0)
@@ -9156,8 +9156,8 @@ function  critbetabinomial(a::Float64, b::Float64, ss::Float64, cprob::Float64):
       critbetabinomial = critcompbetabinomial(a, b, ss, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64, temp::Float64, temp2::Float64, oneMinusP::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0), temp::Float64, temp2::Float64, oneMinusP::Float64
    if (a + b < 1.0)
       i = invbeta(a, b, cprob, oneMinusP) * ss
    else
@@ -9272,8 +9272,8 @@ function  critcompbetabinomial(a::Float64, b::Float64, ss::Float64, cprob::Float
       critcompbetabinomial = critbetabinomial(a, b, ss, 1.0 - cprob)
       Exit Function
    end
-   Dim pr::Float64, tpr::Float64
-   Dim i::Float64, temp::Float64, temp2::Float64, oneMinusP::Float64
+   pr::Float64 = convert(Float64, 0), tpr::Float64
+   i::Float64 = convert(Float64, 0), temp::Float64, temp2::Float64, oneMinusP::Float64
    if (a + b < 1.0)
       i = invcompbeta(a, b, cprob, oneMinusP) * ss
    else
@@ -9300,7 +9300,7 @@ function  critcompbetabinomial(a::Float64, b::Float64, ss::Float64, cprob::Float
             while (tpr > cprob)
                i = i + 1.0
                temp = ss + b - i
-               if temp = 0.0 Exit Do
+               if temp = 0.0 break
                tpr = tpr * ((a + i - 1.0) * (ss - i + 1.0)) / (i * temp)
             end
          else
@@ -9375,7 +9375,7 @@ function  critcompbetabinomial(a::Float64, b::Float64, ss::Float64, cprob::Float
    end
 end
 
-function crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
+function  crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || sample_size < 0.0)
       crit_BetaBinomial = [#VALUE!]
@@ -9386,7 +9386,7 @@ function crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta_shap
    elseif (sample_size = 0.0 || crit_prob = 1.0)
       crit_BetaBinomial = sample_size
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       i = critbetabinomial(beta_shape1, beta_shape2, sample_size, crit_prob)
       crit_BetaBinomial = i
       pr = cdf_BetaBinomial(i, sample_size, beta_shape1, beta_shape2)
@@ -9404,7 +9404,7 @@ function crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta_shap
    crit_BetaBinomial = GetRidOfMinusZeroes(crit_BetaBinomial)
 end
 
-function comp_crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
+function  comp_crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta_shape2::Float64, crit_prob::Float64)::Float64
    sample_size = AlterForIntegralChecks_Others(sample_size)
    if (beta_shape1 <= 0.0 || beta_shape2 <= 0.0 || sample_size < 0.0)
       comp_crit_BetaBinomial = [#VALUE!]
@@ -9415,7 +9415,7 @@ function comp_crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta
    elseif (sample_size = 0.0 || crit_prob = 0.0)
       comp_crit_BetaBinomial = sample_size
    else
-      Dim i::Float64, pr::Float64
+      i::Float64 = convert(Float64, 0), pr::Float64
       i = critcompbetabinomial(beta_shape1, beta_shape2, sample_size, crit_prob)
       comp_crit_BetaBinomial = i
       pr = comp_cdf_BetaBinomial(i, sample_size, beta_shape1, beta_shape2)
@@ -9433,12 +9433,12 @@ function comp_crit_BetaBinomial(sample_size::Float64, beta_shape1::Float64, beta
    comp_crit_BetaBinomial = GetRidOfMinusZeroes(comp_crit_BetaBinomial)
 end
 
-function pdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
+function  pdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
  # pdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid N(0,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 pdf_normal_os = [#VALUE!]: Exit Function
-    Dim n1::Float64: n1 = n + 1
+    n1::Float64 = convert(Float64, 0): n1 = n + 1
     if r > 0 r = r - n1
     if x <= 0
         pdf_normal_os = pdf_beta(cnormal(x), n1 + r, -r) * pdf_normal(x)
@@ -9447,12 +9447,12 @@ function pdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 
     end
 end
  
-function cdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
+function  cdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
  # cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid N(0,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 cdf_normal_os = [#VALUE!]: Exit Function
-    Dim n1::Float64: n1 = n + 1
+    n1::Float64 = convert(Float64, 0): n1 = n + 1
     if r > 0 r = r - n1
     if x <= 0
         cdf_normal_os = cdf_beta(cnormal(x), n1 + r, -r)
@@ -9461,12 +9461,12 @@ function cdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 
     end
 end
  
-function comp_cdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
+function  comp_cdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
  # 1-cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid N(0,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_cdf_normal_os = [#VALUE!]: Exit Function
-    Dim n1::Float64: n1 = n + 1
+    n1::Float64 = convert(Float64, 0): n1 = n + 1
     if r > 0 r = r - n1
     if x <= 0
         comp_cdf_normal_os = comp_cdf_beta(cnormal(x), n1 + r, -r)
@@ -9475,14 +9475,14 @@ function comp_cdf_normal_os(x::Float64, Optional n::Float64 = 1, Optional r::Flo
     end
 end
  
-function inv_normal_os(p::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
+function  inv_normal_os(p::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
  # inverse of cdf_normal_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
  # accuracy for median of extreme order statistic is limited by accuracy of IEEE double precision representation of n >> 10^15, not by this routine
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 inv_normal_os = [#VALUE!]: Exit Function
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invbeta(n1 + r, -r, p, oneMinusxp)
     if abs(xp - 0.5) < 0.00000000000001 && xp <> 0.5 if cdf_beta(0.5, n1 + r, -r) = p inv_normal_os = 0: Exit Function
@@ -9493,13 +9493,13 @@ function inv_normal_os(p::Float64, Optional n::Float64 = 1, Optional r::Float64 
     end
 end
  
-function comp_inv_normal_os(p::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
+function  comp_inv_normal_os(p::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1)::Float64
  # inverse of comp_cdf_normal_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_inv_normal_os = [#VALUE!]: Exit Function
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invcompbeta(n1 + r, -r, p, oneMinusxp)
     if abs(xp - 0.5) < 0.00000000000001 && xp <> 0.5 if comp_cdf_beta(0.5, n1 + r, -r) = p comp_inv_normal_os = 0: Exit Function
@@ -9510,12 +9510,12 @@ function comp_inv_normal_os(p::Float64, Optional n::Float64 = 1, Optional r::Flo
     end
 end
 
-function pdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
+function  pdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
  # pdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 pdf_gamma_os = [#VALUE!]: Exit Function
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_gamma_nc(x / scale_param, shape_param, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9525,12 +9525,12 @@ function pdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1,
     end
 end
 
-function cdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
+function  cdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
  # cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 cdf_gamma_os = [#VALUE!]: Exit Function
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_gamma_nc(x / scale_param, shape_param, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9540,12 +9540,12 @@ function cdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1,
     end
 end
 
-function comp_cdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
+function  comp_cdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
  # 1-cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_cdf_gamma_os = [#VALUE!]: Exit Function
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_gamma_nc(x / scale_param, shape_param, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9555,14 +9555,14 @@ function comp_cdf_gamma_os(x::Float64, shape_param::Float64, Optional n::Float64
     end
 end
 
-function inv_gamma_os(p::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
+function  inv_gamma_os(p::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
  # inverse of cdf_gamma_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
  # accuracy for median of extreme order statistic is limited by accuracy of IEEE double precision representation of n >> 10^15, not by this routine
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 inv_gamma_os = [#VALUE!]: Exit Function
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9572,13 +9572,13 @@ function inv_gamma_os(p::Float64, shape_param::Float64, Optional n::Float64 = 1,
     end
 end
 
-function comp_inv_gamma_os(p::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
+function  comp_inv_gamma_os(p::Float64, shape_param::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional scale_param::Float64 = 1, Optional nc_param::Float64 = 0)::Float64
  # inverse of comp_cdf_gamma_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_inv_gamma_os = [#VALUE!]: Exit Function
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invcompbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9588,13 +9588,13 @@ function comp_inv_gamma_os(p::Float64, shape_param::Float64, Optional n::Float64
     end
 end
 
-function pdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  pdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # pdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid chi2(df) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 pdf_chi2_os = [#VALUE!]: Exit Function
    df = AlterForIntegralChecks_df(df)
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_Chi2_nc(x, df, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9604,13 +9604,13 @@ function pdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional 
     end
 end
 
-function cdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  cdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid chi2(df) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 cdf_chi2_os = [#VALUE!]: Exit Function
    df = AlterForIntegralChecks_df(df)
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_Chi2_nc(x, df, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9620,13 +9620,13 @@ function cdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional 
     end
 end
 
-function comp_cdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  comp_cdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # 1-cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid chi2(df) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_cdf_chi2_os = [#VALUE!]: Exit Function
    df = AlterForIntegralChecks_df(df)
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_Chi2_nc(x, df, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9636,15 +9636,15 @@ function comp_cdf_chi2_os(x::Float64, df::Float64, Optional n::Float64 = 1, Opti
     end
 end
 
-function inv_chi2_os(p::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  inv_chi2_os(p::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # inverse of cdf_chi2_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
  # accuracy for median of extreme order statistic is limited by accuracy of IEEE double precision representation of n >> 10^15, not by this routine
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 inv_chi2_os = [#VALUE!]: Exit Function
    df = AlterForIntegralChecks_df(df)
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9654,14 +9654,14 @@ function inv_chi2_os(p::Float64, df::Float64, Optional n::Float64 = 1, Optional 
     end
 end
 
-function comp_inv_chi2_os(p::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  comp_inv_chi2_os(p::Float64, df::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # inverse of comp_cdf_chi2_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_inv_chi2_os = [#VALUE!]: Exit Function
    df = AlterForIntegralChecks_df(df)
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invcompbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9671,14 +9671,14 @@ function comp_inv_chi2_os(p::Float64, df::Float64, Optional n::Float64 = 1, Opti
     end
 end
 
-function pdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  pdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # pdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 pdf_F_os = [#VALUE!]: Exit Function
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_fdist_nc(x, df1, df2, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9688,14 +9688,14 @@ function pdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 
     end
 end
 
-function cdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  cdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 cdf_F_os = [#VALUE!]: Exit Function
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_fdist_nc(x, df1, df2, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9705,14 +9705,14 @@ function cdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 
     end
 end
 
-function comp_cdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  comp_cdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # 1-cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_cdf_F_os = [#VALUE!]: Exit Function
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_fdist_nc(x, df1, df2, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9722,16 +9722,16 @@ function comp_cdf_F_os(x::Float64, df1::Float64, df2::Float64, Optional n::Float
     end
 end
 
-function inv_F_os(p::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  inv_F_os(p::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # inverse of cdf_F_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
  # accuracy for median of extreme order statistic is limited by accuracy of IEEE double precision representation of n >> 10^15, not by this routine
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 inv_F_os = [#VALUE!]: Exit Function
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9741,15 +9741,15 @@ function inv_F_os(p::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 
     end
 end
 
-function comp_inv_F_os(p::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  comp_inv_F_os(p::Float64, df1::Float64, df2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # inverse of comp_cdf_F_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_inv_F_os = [#VALUE!]: Exit Function
    df1 = AlterForIntegralChecks_df(df1)
    df2 = AlterForIntegralChecks_df(df2)
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invcompbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9759,12 +9759,12 @@ function comp_inv_F_os(p::Float64, df1::Float64, df2::Float64, Optional n::Float
     end
 end
 
-function pdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  pdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # pdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 pdf_beta_os = [#VALUE!]: Exit Function
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_beta_nc(x, shape_param1, shape_param2, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9774,12 +9774,12 @@ function pdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, O
     end
 end
 
-function cdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  cdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 cdf_beta_os = [#VALUE!]: Exit Function
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_beta_nc(x, shape_param1, shape_param2, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9789,12 +9789,12 @@ function cdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, O
     end
 end
 
-function comp_cdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  comp_cdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # 1-cdf for rth smallest (r>0) or -rth largest (r<0) of the n order statistics from a sample of iid gamma(a,1) variables
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_cdf_beta_os = [#VALUE!]: Exit Function
-    Dim p::Float64, n1::Float64: n1 = n + 1
+    p::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     p = cdf_beta_nc(x, shape_param1, shape_param2, nc_param)
     if p <= 0.5        # avoid truncation error by working with p <= 0.5
@@ -9804,14 +9804,14 @@ function comp_cdf_beta_os(x::Float64, shape_param1::Float64, shape_param2::Float
     end
 end
 
-function inv_beta_os(p::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  inv_beta_os(p::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # inverse of cdf_beta_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
  # accuracy for median of extreme order statistic is limited by accuracy of IEEE double precision representation of n >> 10^15, not by this routine
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 inv_beta_os = [#VALUE!]: Exit Function
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9821,13 +9821,13 @@ function inv_beta_os(p::Float64, shape_param1::Float64, shape_param2::Float64, O
     end
 end
 
-function comp_inv_beta_os(p::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
+function  comp_inv_beta_os(p::Float64, shape_param1::Float64, shape_param2::Float64, Optional n::Float64 = 1, Optional r::Float64 = -1, Optional nc_param::Float64 = 0)::Float64
  # inverse of comp_cdf_beta_os
  # based on formula 2.1.5 "Order Statistics" by H.A. David (any edition)
-    Dim oneMinusxp::Float64
+    oneMinusxp::Float64 = convert(Float64, 0)
     n = AlterForIntegralChecks_Others(n): r = AlterForIntegralChecks_Others(r)
     if n < 1 || abs(r) > n || r = 0 comp_inv_beta_os = [#VALUE!]: Exit Function
-    Dim xp::Float64, n1::Float64: n1 = n + 1
+    xp::Float64 = convert(Float64, 0), n1::Float64: n1 = n + 1
     if r > 0 r = r - n1
     xp = invcompbeta(n1 + r, -r, p, oneMinusxp)
     if xp <= 0.5       # avoid truncation error by working with xp <= 0.5
@@ -9837,11 +9837,11 @@ function comp_inv_beta_os(p::Float64, shape_param1::Float64, shape_param2::Float
     end
 end
 
-function fet_pearson22(a::Float64, b::Float64, c::Float64, d::Float64)::Float64
+function  fet_pearson22(a::Float64, b::Float64, c::Float64, d::Float64)::Float64
 #The following is some VBA code for the two-sided 2x2 FET based on Pearson#s
 #Chi-Square statistic (i.e. includes all tables which give a value of the
 #Chi-Square statistic which is greater than or equal to that of the table observed)
-Dim det::Float64, temp::Float64, sample_size::Float64, pop::Float64
+det::Float64 = convert(Float64, 0), temp::Float64, sample_size::Float64, pop::Float64
 det = a * d - b * c
 if det > 0
     temp = a
@@ -9863,9 +9863,9 @@ else
 end
 end
 
-function chi_square_test(r As Range)::Float64
-Dim cs::Float64, rs::Float64
-Dim rc As Long, cc As Long, i As Long, j As Long, k As Long
+function  chi_square_test(r::Range)::Float64
+cs::Float64 = convert(Float64, 0), rs::Float64
+rc::Int32 = convert(Int32, 0), cc::Int32, i::Int32, j::Int32, k::Int32
 rc = r.Rows.count
 cc = r.Columns.count
 if rc < 2 || cc < 2
@@ -9913,13 +9913,13 @@ chi_square_test = comp_cdf_chi_sq(rs, (rc - 1) * (cc - 1))
 
 end
 
-function nidf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
+function  nidf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    if (df1 <= 0.0 || df2 <= 0.0)
       nidf_fdist = [#VALUE!]
    elseif (x <= 0.0)
       nidf_fdist = 0.0
    else
-      Dim p::Float64, q::Float64
+      p::Float64 = convert(Float64, 0), q::Float64
       p = df1 * x
       q = df2 + p
       p = p / q
@@ -9934,13 +9934,13 @@ function nidf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    end
 end
 
-function comp_nidf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
+function  comp_nidf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    if (df1 <= 0.0 || df2 <= 0.0)
       comp_nidf_fdist = [#VALUE!]
    elseif (x <= 0.0)
       comp_nidf_fdist = 1.0
    else
-      Dim p::Float64, q::Float64
+      p::Float64 = convert(Float64, 0), q::Float64
       p = df1 * x
       q = df2 + p
       p = p / q
@@ -9955,8 +9955,8 @@ function comp_nidf_fdist(x::Float64, df1::Float64, df2::Float64)::Float64
    end
 end
 
-function CBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
-   Dim j::Float64
+function  CBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+   j::Float64 = convert(Float64, 0)
    j = Int(i)
    CBNB = 0.0
    while j > -1
@@ -9965,8 +9965,8 @@ function CBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64
    end
 end
 
-function CBNB1(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
-   Dim j::Float64, ss::Float64, bs2::Float64, temp::Float64, swap::Float64
+function  CBNB1(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+   j::Float64 = convert(Float64, 0), ss::Float64, bs2::Float64, temp::Float64, swap::Float64
    On Error GoTo errorhandler
    j = Int(i)
    ss = min(r, beta_shape2)
@@ -10007,16 +10007,16 @@ function CBNB1(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float6
       end
       temp = temp / ((j + bs2) * ss)
       CBNB1 = CBNB1 + temp
-      if temp < 1E-16 * CBNB1 Exit Do
+      if temp < 1E-16 * CBNB1 break
    end
 #Debug.Print j, ss, bs2, beta_shape1
    Exit Function
 errorhandler: Debug.Print j, ss, bs2, beta_shape1
 end
 
-function ccBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
-   Dim ha1::Float64, hprob::Float64, hswap::Bool
-   Dim mrb2::Float64, other::Float64, temp::Float64, ctemp::Float64, mnib1::Float64, mxib1::Float64, swap::Float64, max_iterations::Float64
+function  ccBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float64)::Float64
+   ha1::Float64 = convert(Float64, 0), hprob::Float64, hswap::Bool
+   mrb2::Float64 = convert(Float64, 0), other::Float64, temp::Float64, ctemp::Float64, mnib1::Float64, mxib1::Float64, swap::Float64, max_iterations::Float64
    i = Int(i)
    mrb2 = max(r, beta_shape2)
    other = min(r, beta_shape2)
@@ -10062,7 +10062,7 @@ function ccBNB(i::Float64, r::Float64, beta_shape1::Float64, beta_shape2::Float6
 end
 
 Function ccBNB5(ilim::Float64, rr::Float64, a::Float64, bb::Float64)::Float64
-   Dim temp::Float64, i::Float64, r::Float64, b::Float64
+   temp::Float64 = convert(Float64, 0), i::Float64, r::Float64, b::Float64
    if rr > bb
       r = rr
       b = bb
@@ -10089,13 +10089,13 @@ Function ccBNB5(ilim::Float64, rr::Float64, a::Float64, bb::Float64)::Float64
    ccBNB5 = (r * b * (1.0 - temp) - expm1(ccBNB5) * a * (r + a + b)) / ((r + a) * (a + b))
 end
 
-Function fet_22(c As Long, colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
+Function fet_22(c::Int32, colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
 #The following is some VBA code for the two-sided 2x2 FET based on Pearson#s
 #Chi-Square statistic (i.e. includes all tables which give a value of the
 #Chi-Square statistic which is greater than or equal to that of the table observed)
-Dim inum_min::Float64, jnum_max::Float64, pmf_table::Float64, inum::Float64, jnum::Float64, mode::Float64, pmrc::Float64, pop::Float64, d::Float64, prob_d::Float64, pmfh::Float64, pmfh_save::Float64, knum::Float64, prob::Float64
-Dim i As Long, j As Long
-Dim all_d_zero::Bool
+inum_min::Float64 = convert(Float64, 0), jnum_max::Float64, pmf_table::Float64, inum::Float64, jnum::Float64, mode::Float64, pmrc::Float64, pop::Float64, d::Float64, prob_d::Float64, pmfh::Float64, pmfh_save::Float64, knum::Float64, prob::Float64
+i::Int32 = convert(Int32, 0), j::Int32
+all_d_zero::Bool = convert(Bool, 0)
 ReDim ml(1 To c)::Float64
 
 #c = High(colsum) #But can#t pass partial arrays in calls
@@ -10195,12 +10195,12 @@ else
       pmfh = pmfh * (knum * (pop - colsum(c) - rowsum + knum))
       knum = knum - 1.0
       pmfh = pmfh / ((colsum(c) - knum) * (rowsum - knum))
-      if pmfh = 0.0 Exit Do
+      if pmfh = 0.0 break
       prob_d = fet_22(c - 1, colsum, rowsum - knum, pmf_Obs / pmfh, inum, jnum)
 #Debug.Print knum, pmfh, prob_d
       if inum > jnum
          prob = prob + cdf_hypergeometric(knum, colsum(c), rowsum, pop)
-         Exit Do
+         break
       end
       prob = prob + pmfh * prob_d
    end
@@ -10213,12 +10213,12 @@ else
       pmfh = pmfh * ((colsum(c) - knum) * (rowsum - knum))
       knum = knum + 1.0
       pmfh = pmfh / (knum * (pop - colsum(c) - rowsum + knum))
-      if pmfh = 0.0 Exit Do
+      if pmfh = 0.0 break
       prob_d = fet_22(c - 1, colsum, rowsum - knum, pmf_Obs / pmfh, inum, jnum)
 #Debug.Print knum, pmfh, prob_d
       if inum > jnum
          prob = prob + comp_cdf_hypergeometric(knum - 1.0, colsum(c), rowsum, pop)
-         Exit Do
+         break
       end
       prob = prob + pmfh * prob_d
    end
@@ -10231,7 +10231,7 @@ Function old_fet_22(a::Float64, b::Float64, c::Float64, d::Float64)::Float64
 #The following is some VBA code for the two-sided 2x2 FET based on Pearson#s
 #Chi-Square statistic (i.e. includes all tables which give a value of the
 #Chi-Square statistic which is greater than or equal to that of the table observed)
-Dim det::Float64, temp::Float64, sample_size::Float64, pop::Float64, pmf_Obs::Float64, pmf_table::Float64, jnum::Float64, mode::Float64
+det::Float64 = convert(Float64, 0), temp::Float64, sample_size::Float64, pop::Float64, pmf_Obs::Float64, pmf_table::Float64, jnum::Float64, mode::Float64
 det = GeneralabMinuscd(a, d, b, c)
 if det > 0
 temp = a
@@ -10279,13 +10279,13 @@ else
 end
 end
 
-Function fet_23(c As Long, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
-Dim d::Float64, cs::Float64, colsum12::Float64, prob::Float64, pmfh::Float64, pmfh_save::Float64, temp::Float64, inum::Float64, jnum::Float64, knum::Float64
-Dim cdf::Float64, ccdf::Float64, pmf_table::Float64, mode::Float64, cdf_save::Float64, ccdf_save::Float64, col1mRowSum::Float64, prob_d::Float64, htTemp::Float64
-Dim pmf_table_inum::Float64, pmf_table_jnum::Float64, pmf_table_inum_save::Float64, pmf_table_jnum_save::Float64
-Dim i As Long, j As Long, k As Long
-Dim all_d_zero::Bool
-Dim ast As TAddStack
+Function fet_23(c::Int32, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
+d::Float64 = convert(Float64, 0), cs::Float64, colsum12::Float64, prob::Float64, pmfh::Float64, pmfh_save::Float64, temp::Float64, inum::Float64, jnum::Float64, knum::Float64
+cdf::Float64 = convert(Float64, 0), ccdf::Float64, pmf_table::Float64, mode::Float64, cdf_save::Float64, ccdf_save::Float64, col1mRowSum::Float64, prob_d::Float64, htTemp::Float64
+pmf_table_inum::Float64 = convert(Float64, 0), pmf_table_jnum::Float64, pmf_table_inum_save::Float64, pmf_table_jnum_save::Float64
+i::Int32 = convert(Int32, 0), j::Int32, k::Int32
+all_d_zero::Bool = convert(Bool, 0)
+ast::TAddStack = convert(TAddStack, 0)
 
 ReDim ml(1 To c)::Float64
 
@@ -10405,7 +10405,7 @@ if c = 3
          pmfh = pmfh / ((rowsum - knum) * (colsum(3) - knum))
          #pmfh = pmf_hypergeometric(knum, rowsum, colsum(3), cs)
       end
-      if pmfh <= pmf_Obs Exit Do
+      if pmfh <= pmf_Obs break
       mode = Int((rowsum - knum + 1.0) * (colsum(2) + 1.0) / (colsum12 + 2.0))
 #if knum = 4294567294.0
 #   Debug.Print "Got here"
@@ -10441,9 +10441,9 @@ if c = 3
             if pmf_table = 0.0
                cdf = 0.0
                temp = 0.0
-               Exit Do
+               break
             end
-            if pmf_table * pmfh <= pmf_Obs Exit Do
+            if pmf_table * pmfh <= pmf_Obs break
             temp = temp - pmf_table
          end
          inum = inum + 1.0
@@ -10480,16 +10480,16 @@ if c = 3
             if pmf_table = 0.0
                ccdf = 0.0
                temp = 0.0
-               Exit Do
+               break
             end
-            if pmf_table * pmfh <= pmf_Obs Exit Do
+            if pmf_table * pmfh <= pmf_Obs break
             temp = temp - pmf_table
          end
          jnum = jnum - 1.0
       end
       if k = 50 pmf_table_jnum = pmf_hypergeometric(jnum, rowsum - knum, colsum(2), colsum12)
       ccdf = ccdf + temp
-      if inum > jnum Exit Do
+      if inum > jnum break
       Call AddValueToStack(ast, pmfh * (cdf + ccdf))
 #Debug.Print knum, pmfh * (cdf + ccdf)
    end
@@ -10517,7 +10517,7 @@ if c = 3
          pmfh = pmfh / (knum * (colsum12 - rowsum + knum))
          #pmfh = pmf_hypergeometric(knum, rowsum, colsum(3), cs)
       end
-      if pmfh <= pmf_Obs Exit Do
+      if pmfh <= pmf_Obs break
       mode = Int((rowsum - knum + 1.0) * (colsum(2) + 1.0) / (colsum12 + 2.0))
       pmf_table = pmf_table_inum * ((rowsum - knum - inum + 1.0) * (colsum12 - rowsum + knum)) / ((rowsum - knum + 1.0) * (col1mRowSum + knum + inum))   #pmf_hypergeometric(inum, rowsum - knum, colsum(2), colsum12)
       temp = pmf_table_inum * inum / (rowsum - knum + 1.0)
@@ -10549,9 +10549,9 @@ if c = 3
             if pmf_table = 0.0
                cdf = 0.0
                temp = 0.0
-               Exit Do
+               break
             end
-            if pmf_table * pmfh <= pmf_Obs Exit Do
+            if pmf_table * pmfh <= pmf_Obs break
             temp = temp - pmf_table
          end
          inum = inum + 1.0
@@ -10589,16 +10589,16 @@ if c = 3
             if pmf_table = 0.0
                ccdf = 0.0
                temp = 0.0
-               Exit Do
+               break
             end
-            if pmf_table * pmfh <= pmf_Obs Exit Do
+            if pmf_table * pmfh <= pmf_Obs break
             temp = temp - pmf_table
          end
          jnum = jnum - 1.0
       end
       if k = 50 pmf_table_jnum = pmf_hypergeometric(jnum, rowsum - knum, colsum(2), colsum12)
       ccdf = ccdf + temp
-      if inum > jnum Exit Do
+      if inum > jnum break
       Call AddValueToStack(ast, pmfh * (cdf + ccdf))
 #Debug.Print knum, pmfh * (cdf + ccdf)
    end
@@ -10626,11 +10626,11 @@ else
       pmfh = pmfh * ((colsum(c) - knum) * (rowsum - knum))
       knum = knum + 1.0
       pmfh = pmfh / (knum * (cs - colsum(c) - rowsum + knum))
-      if pmfh = 0.0 Exit Do
+      if pmfh = 0.0 break
       prob_d = fet_23(c - 1, colsum, rowsum - knum, pmf_Obs / pmfh, inum, jnum)
       if inum > jnum
          prob = prob + comp_cdf_hypergeometric(knum - 1.0, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       Call AddValueToStack(ast, pmfh * prob_d)
    end
@@ -10642,11 +10642,11 @@ else
       pmfh = pmfh * (knum * (cs - colsum(c) - rowsum + knum))
       knum = knum - 1.0
       pmfh = pmfh / ((colsum(c) - knum) * (rowsum - knum))
-      if pmfh = 0.0 Exit Do
+      if pmfh = 0.0 break
       prob_d = fet_23(c - 1, colsum, rowsum - knum, pmf_Obs / pmfh, inum, jnum)
       if inum > jnum
          prob = prob + cdf_hypergeometric(knum, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       Call AddValueToStack(ast, pmfh * prob_d)
    end
@@ -10654,13 +10654,13 @@ else
 end
 end
 
-Function fet_24(c As Long, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
-Dim d::Float64, cs::Float64, colsum12::Float64, colsum34::Float64, prob::Float64, temp::Float64, inum::Float64, jnum::Float64, inum_save::Float64, jnum_save::Float64
-Dim cdf::Float64, ccdf::Float64, pmf_table_inum::Float64, pmf_table_jnum::Float64, mode::Float64, cdf_save::Float64, ccdf_save::Float64, col1mRowSum::Float64, probf4::Float64
-Dim dnum_old::Float64, fnum_old::Float64, pmfd_old::Float64, dnum_save::Float64, pmfd_save::Float64
-Dim i As Long, j As Long, count As Long
-Dim all_d_zero::Bool
-Dim asto As TAddStack
+Function fet_24(c::Int32, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
+d::Float64 = convert(Float64, 0), cs::Float64, colsum12::Float64, colsum34::Float64, prob::Float64, temp::Float64, inum::Float64, jnum::Float64, inum_save::Float64, jnum_save::Float64
+cdf::Float64 = convert(Float64, 0), ccdf::Float64, pmf_table_inum::Float64, pmf_table_jnum::Float64, mode::Float64, cdf_save::Float64, ccdf_save::Float64, col1mRowSum::Float64, probf4::Float64
+dnum_old::Float64 = convert(Float64, 0), fnum_old::Float64, pmfd_old::Float64, dnum_save::Float64, pmfd_save::Float64
+i::Int32 = convert(Int32, 0), j::Int32, count::Int32
+all_d_zero::Bool = convert(Bool, 0)
+asto::TAddStack = convert(TAddStack, 0)
 
 ReDim ml(1 To c)::Float64
 if pmf_Obs > 1.0 #All tables have pmf <= 1
@@ -10693,11 +10693,11 @@ Do #Update guess at mode vector
    Next i
 end Until all_d_zero
 
-Dim pmff::Float64, pmfd::Float64, pmfd_down::Float64, pmfd_up::Float64
-Dim cdff::Float64, probf::Float64, pmf_Obs_save::Float64
-Dim dnum::Float64, dnum_up::Float64, dnum_down::Float64, fnum::Float64, fnum_save::Float64, pmff_save::Float64, rowsummfnum::Float64
-Dim cdf_start::Float64, ccdf_start::Float64, inum_min::Float64, jnum_max::Float64
-Dim continue_up::Bool, continue_down::Bool, exit_loop::Bool
+pmff::Float64 = convert(Float64, 0), pmfd::Float64, pmfd_down::Float64, pmfd_up::Float64
+cdff::Float64 = convert(Float64, 0), probf::Float64, pmf_Obs_save::Float64
+dnum::Float64 = convert(Float64, 0), dnum_up::Float64, dnum_down::Float64, fnum::Float64, fnum_save::Float64, pmff_save::Float64, rowsummfnum::Float64
+cdf_start::Float64 = convert(Float64, 0), ccdf_start::Float64, inum_min::Float64, jnum_max::Float64
+continue_up::Bool = convert(Bool, 0), continue_down::Bool, exit_loop::Bool
 if c = 4
    Call InitAddStack(asto)
    prob = 0.0
@@ -10789,22 +10789,22 @@ if c = 4
       pmfd_up = pmfd_up / (dnum_up * (colsum(3) - fnum + dnum_up))
       Do
          pmfd = max(pmfd_down, pmfd_up)
-         if pmfd = 0.0 Exit Do
+         if pmfd = 0.0 break
          while pmfd * pmf_table_inum <= pmf_Obs
             cdf = cdf + pmf_table_inum
             pmf_table_inum = pmf_table_inum * (rowsummfnum - inum) * (colsum(2) - inum)
             inum = inum + 1.0
             pmf_table_inum = pmf_table_inum / (inum * (col1mRowSum + fnum + inum))
-            if (inum > mode) Exit Do
+            if (inum > mode) break
          end
          while pmfd * pmf_table_jnum <= pmf_Obs
             ccdf = ccdf + pmf_table_jnum
             pmf_table_jnum = pmf_table_jnum * (jnum * (col1mRowSum + fnum + jnum))
             jnum = jnum - 1.0
             pmf_table_jnum = pmf_table_jnum / ((rowsummfnum - jnum) * (colsum(2) - jnum))
-            if (jnum < mode) Exit Do
+            if (jnum < mode) break
          end
-         if inum > jnum Exit Do
+         if inum > jnum break
          probf4 = probf4 + (pmfd * (cdf + ccdf) - probf)
          count = count + 1
          if pmfd_down > pmfd_up
@@ -10832,7 +10832,7 @@ if c = 4
          rowsummfnum = rowsum - fnum
          pmff = pmff / ((colsum12 - rowsummfnum) * (fnum))
          continue_up = pmff > 0.0
-         if Not continue_up
+         if !continue_up
             pmff = pmff_save
             fnum = fnum_save
             rowsummfnum = rowsum - fnum
@@ -10864,13 +10864,13 @@ if c = 4
          end
       end
       Do
-         if Not continue_up
+         if !continue_up
             pmff = pmff * ((colsum12 - rowsummfnum) * (fnum))
             fnum = fnum - 1.0
             rowsummfnum = rowsum - fnum
             pmff = pmff / ((rowsummfnum) * (colsum34 - fnum))
             continue_down = pmff > 0.0
-            if Not continue_down Exit Do
+            if !continue_down break
             inum = inum_save
             jnum = jnum_save
             cdf = cdf_save
@@ -10966,7 +10966,7 @@ if c = 4
             end
          end
       end Until exit_loop
-      if Not continue_down Exit Do
+      if !continue_down break
       cdf_save = cdf
       ccdf_save = ccdf
       inum_save = inum
@@ -10974,7 +10974,7 @@ if c = 4
    end Until !continue_down
    fet_24 = prob + StackTotal(asto)
 elseif c > 4
-   Dim knum::Float64
+   knum::Float64 = convert(Float64, 0)
    knum = ml(c)
    pmff = pmf_hypergeometric(knum, colsum(c), rowsum, cs)
    pmff_save = pmff
@@ -10994,11 +10994,11 @@ elseif c > 4
       pmff = pmff * ((colsum(c) - knum) * (rowsum - knum))
       knum = knum + 1.0
       pmff = pmff / (knum * (cs - colsum(c) - rowsum + knum))
-      if pmff = 0.0 Exit Do
+      if pmff = 0.0 break
       probf4 = fet_24(c - 1, colsum, rowsum - knum, pmf_Obs / pmff, inum, jnum)
       if inum > jnum
          prob = prob + comp_cdf_hypergeometric(knum - 1.0, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       Call AddValueToStack(asto, pmff * probf4)
    end
@@ -11010,11 +11010,11 @@ elseif c > 4
       pmff = pmff * (knum * (cs - colsum(c) - rowsum + knum))
       knum = knum - 1.0
       pmff = pmff / ((colsum(c) - knum) * (rowsum - knum))
-      if pmff = 0.0 Exit Do
+      if pmff = 0.0 break
       probf4 = fet_24(c - 1, colsum, rowsum - knum, pmf_Obs / pmff, inum, jnum)
       if inum > jnum
          prob = prob + cdf_hypergeometric(knum, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       Call AddValueToStack(asto, pmff * probf4)
    end
@@ -11024,11 +11024,11 @@ else
 end
 end
 
-Function fet_25(c As Long, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
-Dim d::Float64, cs::Float64, prob::Float64, temp::Float64, inum::Float64, jnum::Float64, inum_save::Float64, jnum_save::Float64, inum_save_save::Float64, jnum_save_save::Float64
-Dim cdf::Float64, ccdf::Float64, pmf_table_inum::Float64, pmf_table_jnum::Float64, mode::Float64, cdf_save::Float64, ccdf_save::Float64, col1mRowSum::Float64, prob_d::Float64
-Dim i As Long, j As Long, c_count As Long
-Dim all_d_zero::Bool
+Function fet_25(c::Int32, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
+d::Float64 = convert(Float64, 0), cs::Float64, prob::Float64, temp::Float64, inum::Float64, jnum::Float64, inum_save::Float64, jnum_save::Float64, inum_save_save::Float64, jnum_save_save::Float64
+cdf::Float64 = convert(Float64, 0), ccdf::Float64, pmf_table_inum::Float64, pmf_table_jnum::Float64, mode::Float64, cdf_save::Float64, ccdf_save::Float64, col1mRowSum::Float64, prob_d::Float64
+i::Int32 = convert(Int32, 0), j::Int32, c_count::Int32
+all_d_zero::Bool = convert(Bool, 0)
 
 ReDim ml(1 To c)::Float64
 
@@ -11062,15 +11062,15 @@ Do #Update guess at mode vector
    Next i
 end Until all_d_zero
 
-Dim pmff::Float64, pmfd4::Float64, pmfd4_down::Float64, pmfd4_up::Float64, pmfd5::Float64, pmfd5_save::Float64
-Dim cdff::Float64, probf::Float64, pmf_Obs_save::Float64, probf5::Float64, cdf_save_save::Float64, ccdf_save_save::Float64
-Dim d4num::Float64, d4num_up::Float64, d4num_down::Float64, d5num::Float64, d5num_save::Float64, fnum::Float64, fnum_save::Float64, pmff_save::Float64, rowsummfnum::Float64
-Dim cdf_start::Float64, ccdf_start::Float64, inum_min::Float64, jnum_max::Float64, pmf_table_inum_save::Float64, pmf_table_jnum_save::Float64
-Dim inum_save5::Float64, jnum_save5::Float64, pmf_table_inum_save5::Float64, pmf_table_jnum_save5::Float64, cdf_save5::Float64, ccdf_save5::Float64
-Dim colsum12::Float64, colsum34::Float64, colsum345::Float64
+pmff::Float64 = convert(Float64, 0), pmfd4::Float64, pmfd4_down::Float64, pmfd4_up::Float64, pmfd5::Float64, pmfd5_save::Float64
+cdff::Float64 = convert(Float64, 0), probf::Float64, pmf_Obs_save::Float64, probf5::Float64, cdf_save_save::Float64, ccdf_save_save::Float64
+d4num::Float64 = convert(Float64, 0), d4num_up::Float64, d4num_down::Float64, d5num::Float64, d5num_save::Float64, fnum::Float64, fnum_save::Float64, pmff_save::Float64, rowsummfnum::Float64
+cdf_start::Float64 = convert(Float64, 0), ccdf_start::Float64, inum_min::Float64, jnum_max::Float64, pmf_table_inum_save::Float64, pmf_table_jnum_save::Float64
+inum_save5::Float64 = convert(Float64, 0), jnum_save5::Float64, pmf_table_inum_save5::Float64, pmf_table_jnum_save5::Float64, cdf_save5::Float64, ccdf_save5::Float64
+colsum12::Float64 = convert(Float64, 0), colsum34::Float64, colsum345::Float64
 
-Dim continue_up::Bool, continue_down::Bool, exit_loop::Bool
-Dim c5_up::Bool, c5_down::Bool, el5::Bool
+continue_up::Bool = convert(Bool, 0), continue_down::Bool, exit_loop::Bool
+c5_up::Bool = convert(Bool, 0), c5_down::Bool, el5::Bool
 if c = 5
    d5num = ml(5)
    d4num = ml(4)
@@ -11172,7 +11172,7 @@ if c = 5
          pmfd4_up = pmfd4_up / (d4num_up * (colsum(3) - fnum + d5num + d4num_up))
          Do
             pmfd4 = max(pmfd4_down, pmfd4_up)
-            if pmfd4 = 0.0 Exit Do
+            if pmfd4 = 0.0 break
             if pmfd4 * pmf_table_inum <= pmf_Obs
                Do
                   cdf = cdf + pmf_table_inum
@@ -11193,7 +11193,7 @@ if c = 5
                pmfd4_down = cdf_hypergeometric(d4num_down, fnum - d5num, colsum(4), colsum34)
                pmfd4_up = comp_cdf_hypergeometric(d4num_up - 1.0, fnum - d5num, colsum(4), colsum34)
                probf = probf + pmfd4_down + pmfd4_up
-               Exit Do
+               break
             end
             probf = probf + pmfd4 * (cdf + ccdf)
             if pmfd4_down > pmfd4_up
@@ -11213,7 +11213,7 @@ if c = 5
             d5num = d5num + 1.0
             pmfd5 = pmfd5 / (d5num * (colsum34 - fnum + d5num))
             c5_up = pmfd5 > 0.0
-            if Not c5_up
+            if !c5_up
                pmfd5 = pmfd5_save
                d5num = d5num_save
                inum_save_save = inum_save5
@@ -11225,12 +11225,12 @@ if c = 5
             end
          end
          Do
-            if Not c5_up
+            if !c5_up
                pmfd5 = pmfd5 * d5num * (colsum34 - fnum + d5num)
                d5num = d5num - 1.0
                pmfd5 = pmfd5 / ((fnum - d5num) * (colsum(5) - d5num))
                c5_down = pmfd5 > 0.0
-               if Not c5_down Exit Do
+               if !c5_down break
             end
             d4num = Int((fnum - d5num + 1.0) * (colsum(4) + 1.0) / (colsum34 + 2.0))
             pmfd4 = pmf_hypergeometric(d4num, fnum - d5num, colsum(4), colsum34)
@@ -11288,11 +11288,11 @@ if c = 5
                else
                   probf5 = probf5 + cdf_hypergeometric(d5num, fnum, colsum(5), colsum345)
                   c5_down = false
-                  Exit Do
+                  break
                end
             end
          end Until el5
-         if Not c5_down Exit Do
+         if !c5_down break
          inum_save_save = inum
          jnum_save_save = jnum
          pmf_table_inum_save = pmf_table_inum
@@ -11309,7 +11309,7 @@ if c = 5
          rowsummfnum = rowsum - fnum
          pmff = pmff / ((colsum12 - rowsummfnum) * (fnum))
          continue_up = pmff > 0.0
-         if Not continue_up
+         if !continue_up
             pmff = pmff_save
             fnum = fnum_save
             rowsummfnum = rowsum - fnum
@@ -11338,13 +11338,13 @@ if c = 5
          end
       end
       Do
-         if Not continue_up
+         if !continue_up
             pmff = pmff * ((colsum12 - rowsummfnum) * (fnum))
             fnum = fnum - 1.0
             rowsummfnum = rowsum - fnum
             pmff = pmff / ((rowsummfnum) * (colsum345 - fnum))
             continue_down = pmff > 0.0
-            if Not continue_down Exit Do
+            if !continue_down break
             inum = inum_save
             jnum = jnum_save
             cdf = cdf_save
@@ -11439,7 +11439,7 @@ if c = 5
             end
          end
       end Until exit_loop
-      if Not continue_down Exit Do
+      if !continue_down break
       cdf_save = cdf
       ccdf_save = ccdf
       inum_save = inum
@@ -11454,7 +11454,7 @@ if c = 5
    fet_25 = prob
    Exit Function
 elseif c >= 6
-   Dim knum::Float64
+   knum::Float64 = convert(Float64, 0)
    knum = ml(c)
    pmff = pmf_hypergeometric(knum, colsum(c), rowsum, cs)
    pmff_save = pmff
@@ -11473,11 +11473,11 @@ elseif c >= 6
       pmff = pmff * ((colsum(c) - knum) * (rowsum - knum))
       knum = knum + 1.0
       pmff = pmff / (knum * (cs - colsum(c) - rowsum + knum))
-      if pmff = 0.0 Exit Do
+      if pmff = 0.0 break
       prob_d = fet_25(c - 1, colsum, rowsum - knum, pmf_Obs / pmff, inum, jnum)
       if inum > jnum
          prob = prob + comp_cdf_hypergeometric(knum - 1.0, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       prob = prob + pmff * prob_d
    end
@@ -11489,11 +11489,11 @@ elseif c >= 6
       pmff = pmff * (knum * (cs - colsum(c) - rowsum + knum))
       knum = knum - 1.0
       pmff = pmff / ((colsum(c) - knum) * (rowsum - knum))
-      if pmff = 0.0 Exit Do
+      if pmff = 0.0 break
       prob_d = fet_25(c - 1, colsum, rowsum - knum, pmf_Obs / pmff, inum, jnum)
       if inum > jnum
          prob = prob + cdf_hypergeometric(knum, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       prob = prob + pmff * prob_d
    end
@@ -11503,20 +11503,20 @@ else
 end
 end
 
-Function fet_26(c As Long, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
-Dim d::Float64, cs::Float64, colsum1_2::Float64, prob::Float64, temp::Float64, inum::Float64, jnum::Float64, inum_save::Float64, jnum_save::Float64
-Dim cdf::Float64, ccdf::Float64, pmf_table_inum::Float64, pmf_table_jnum::Float64, mode::Float64, col1mRowSum::Float64, row3sum::Float64
-Dim i As Long, j As Long, tc As Long
-Dim all_d_zero::Bool
+Function fet_26(c::Int32, ByRef colsum()::Float64, rowsum::Float64, pmf_Obs::Float64, ByRef inumstart::Float64, ByRef jnumstart::Float64)::Float64
+d::Float64 = convert(Float64, 0), cs::Float64, colsum1_2::Float64, prob::Float64, temp::Float64, inum::Float64, jnum::Float64, inum_save::Float64, jnum_save::Float64
+cdf::Float64 = convert(Float64, 0), ccdf::Float64, pmf_table_inum::Float64, pmf_table_jnum::Float64, mode::Float64, col1mRowSum::Float64, row3sum::Float64
+i::Int32 = convert(Int32, 0), j::Int32, tc::Int32
+all_d_zero::Bool = convert(Bool, 0)
 
-Dim d4num::Float64, d4num_down::Float64, d4num_up::Float64
-Dim pmff::Float64, pmfd4::Float64, pmfd4_down::Float64, pmfd4_up::Float64
-Dim cdff::Float64, probf::Float64, pmf_Obs_save::Float64, cdf_start::Float64, ccdf_start::Float64
-Dim fnum::Float64, fnum_start::Float64, pmff_start::Float64, rowsummfnum::Float64
-Dim cdf_save::Float64, ccdf_save::Float64, inum_min::Float64, jnum_max::Float64, pmf_table_inum_save::Float64, pmf_table_jnum_save::Float64
+d4num::Float64 = convert(Float64, 0), d4num_down::Float64, d4num_up::Float64
+pmff::Float64 = convert(Float64, 0), pmfd4::Float64, pmfd4_down::Float64, pmfd4_up::Float64
+cdff::Float64 = convert(Float64, 0), probf::Float64, pmf_Obs_save::Float64, cdf_start::Float64, ccdf_start::Float64
+fnum::Float64 = convert(Float64, 0), fnum_start::Float64, pmff_start::Float64, rowsummfnum::Float64
+cdf_save::Float64 = convert(Float64, 0), ccdf_save::Float64, inum_min::Float64, jnum_max::Float64, pmf_table_inum_save::Float64, pmf_table_jnum_save::Float64
 
-Dim continue_up::Bool, continue_down::Bool, exit_loop::Bool
-Dim el5::Bool
+continue_up::Bool = convert(Bool, 0), continue_down::Bool, exit_loop::Bool
+el5::Bool = convert(Bool, 0)
 
 ReDim ml(1 To c)::Float64, dnum(5 To c)::Float64, dnum_up(5 To c)::Float64, dnum_down(5 To c)::Float64, dnum_save(5 To c)::Float64, colsumsum(3 To c)::Float64
 ReDim pmfd(5 To c)::Float64, pmfd_save(5 To c)::Float64, probf5(5 To c)::Float64
@@ -11671,7 +11671,7 @@ if c >= 5
          inum = inum
          Do
             pmfd4 = max(pmfd4_down, pmfd4_up)
-            if pmfd4 = 0.0 Exit Do
+            if pmfd4 = 0.0 break
             if pmfd4 * pmf_table_inum <= pmf_Obs
                Do
                   cdf = cdf + pmf_table_inum
@@ -11692,7 +11692,7 @@ if c >= 5
                pmfd4_down = cdf_hypergeometric(d4num_down, fnum - dnumsum(4), colsum(4), colsumsum(4))
                pmfd4_up = comp_cdf_hypergeometric(d4num_up - 1.0, fnum - dnumsum(4), colsum(4), colsumsum(4))
                probf = probf + pmfd4_down + pmfd4_up
-               Exit Do
+               break
             end
             probf = probf + pmfd4 * (cdf + ccdf)
             if pmfd4_down > pmfd4_up
@@ -11717,7 +11717,7 @@ if c >= 5
                   dnumsum(tc - 1) = dnumsum(tc) + dnum(tc)
                   pmfd(tc) = pmfd(tc) / (dnum(tc) * (colsumsum(tc - 1) - fnum + dnumsum(tc - 1)))
                   c_up(tc) = pmfd(tc) > 0.0
-                  if Not c_up(tc)
+                  if !c_up(tc)
                      pmfd(tc) = pmfd_save(tc)
                      dnum(tc) = dnum_save(tc)
                      dnumsum(tc - 1) = dnumsum(tc) + dnum(tc)
@@ -11729,15 +11729,15 @@ if c >= 5
                      ccdf_next(tc) = ccdf_save5(tc)
                   end
                end
-               if Not c_up(tc)
+               if !c_up(tc)
                   pmfd(tc) = pmfd(tc) * dnum(tc) * (colsumsum(tc - 1) - fnum + dnumsum(tc - 1))
                   dnum(tc) = dnum(tc) - 1.0
                   dnumsum(tc - 1) = dnumsum(tc) + dnum(tc)
                   pmfd(tc) = pmfd(tc) / ((fnum - dnumsum(tc - 1)) * (colsum(tc) - dnum(tc)))
                   c_down(tc) = pmfd(tc) > 0.0
-                  if Not c_down(tc)
+                  if !c_down(tc)
                      tc = tc + 1
-                     if tc > c Exit Do
+                     if tc > c break
                      probf5(tc) = probf5(tc) + probf5(tc - 1) * pmfd(tc)
 #Debug.Print tc, probf5(tc), dnum(tc), probf5(tc - 1), pmfd(tc)
                      probf5(tc - 1) = 0.0
@@ -11745,7 +11745,7 @@ if c >= 5
                   end
                end
             end Until el5
-            if tc > c Exit Do
+            if tc > c break
             
             row3sum = fnum - dnumsum(tc - 1)
             ml(3) = row3sum
@@ -11823,7 +11823,7 @@ if c >= 5
                   probf5(tc) = probf5(tc) + cdf_hypergeometric(dnum(tc), fnum - dnumsum(tc), colsum(tc), colsumsum(tc))
                   c_down(tc) = false
                   tc = tc + 1
-                  if tc > c Exit Do
+                  if tc > c break
                   probf5(tc) = probf5(tc) + probf5(tc - 1) * pmfd(tc)
 #Debug.Print tc, probf5(tc), inum, jnum, dnum(tc), probf5(tc - 1), pmfd(tc)
                   probf5(tc - 1) = 0.0
@@ -11831,7 +11831,7 @@ if c >= 5
                el5 = false
             end
          end Until el5
-         if tc > c Exit Do
+         if tc > c break
          For i = tc To 5 Step -1
             inum_next(i) = inum
             jnum_next(i) = jnum
@@ -11861,7 +11861,7 @@ if c >= 5
          rowsummfnum = rowsum - fnum
          pmff = pmff / ((colsum1_2 - rowsummfnum) * (fnum))
          continue_up = pmff > 0.0
-         if Not continue_up
+         if !continue_up
             pmff = pmff_start
             fnum = fnum_start
             rowsummfnum = rowsum - fnum
@@ -11890,13 +11890,13 @@ if c >= 5
          end
       end
       Do
-         if Not continue_up
+         if !continue_up
             pmff = pmff * ((colsum1_2 - rowsummfnum) * (fnum))
             fnum = fnum - 1.0
             rowsummfnum = rowsum - fnum
             pmff = pmff / ((rowsummfnum) * (colsumsum(c) - fnum))
             continue_down = pmff > 0.0
-            if Not continue_down Exit Do
+            if !continue_down break
             inum = inum_save
             jnum = jnum_save
             cdf = cdf_save
@@ -12005,7 +12005,7 @@ if c >= 5
             end
          end
       end Until exit_loop
-      if Not continue_down Exit Do
+      if !continue_down break
 #Debug.Print fnum, d4num, dnum(5), dnum(6), inum, jnum, pmf_Obs, pmff, pmfd4, pmfd(5), pmfd(6)
       cdf_save = cdf
       ccdf_save = ccdf
@@ -12017,7 +12017,7 @@ if c >= 5
    fet_26 = prob
    Exit Function
 elseif c >= 6
-   Dim knum::Float64, prob_d::Float64
+   knum::Float64 = convert(Float64, 0), prob_d::Float64
    knum = ml(c)
    pmff = pmf_hypergeometric(knum, colsum(c), rowsum, cs)
    pmff_start = pmff
@@ -12036,11 +12036,11 @@ elseif c >= 6
       pmff = pmff * ((colsum(c) - knum) * (rowsum - knum))
       knum = knum + 1.0
       pmff = pmff / (knum * (cs - colsum(c) - rowsum + knum))
-      if pmff = 0.0 Exit Do
+      if pmff = 0.0 break
       prob_d = fet_26(c - 1, colsum, rowsum - knum, pmf_Obs / pmff, inum, jnum)
       if inum > jnum
          prob = prob + comp_cdf_hypergeometric(knum - 1.0, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       prob = prob + pmff * prob_d
    end
@@ -12052,11 +12052,11 @@ elseif c >= 6
       pmff = pmff * (knum * (cs - colsum(c) - rowsum + knum))
       knum = knum - 1.0
       pmff = pmff / ((colsum(c) - knum) * (rowsum - knum))
-      if pmff = 0.0 Exit Do
+      if pmff = 0.0 break
       prob_d = fet_26(c - 1, colsum, rowsum - knum, pmf_Obs / pmff, inum, jnum)
       if inum > jnum
          prob = prob + cdf_hypergeometric(knum, colsum(c), rowsum, cs)
-         Exit Do
+         break
       end
       prob = prob + pmff * prob_d
    end
@@ -12066,12 +12066,12 @@ else
 end
 end
 
-function fet(r As Range)::Float64
-Dim cs::Float64, rowsum::Float64, rs::Float64, maxc::Float64, d::Float64, a::Float64, b::Float64, c::Float64, bPlusc::Float64, cp::Float64, rsp::Float64, pmf_Obs::Float64, pmf_d::Float64, pmf_e::Float64
-Dim pm::Float64, cd::Float64, prob::Float64, pmfh::Float64, pmfh_save::Float64, temp::Float64, inum::Float64, jnum::Float64, knum::Float64, knum_save::Float64
-Dim rc As Long, cc As Long, i As Long, j As Long, k As Long
-Dim inum_save::Float64, jnum_save::Float64, es11::Float64, es12::Float64, es12_save::Float64, es12p13::Float64, es01::Float64, es02::Float64, es023::Float64, pmf_d_save::Float64, pmf_e_save::Float64, prob_d::Float64, mode::Float64
-Dim all_d_zero::Bool
+function  fet(r::Range)::Float64
+cs::Float64 = convert(Float64, 0), rowsum::Float64, rs::Float64, maxc::Float64, d::Float64, a::Float64, b::Float64, c::Float64, bPlusc::Float64, cp::Float64, rsp::Float64, pmf_Obs::Float64, pmf_d::Float64, pmf_e::Float64
+pm::Float64 = convert(Float64, 0), cd::Float64, prob::Float64, pmfh::Float64, pmfh_save::Float64, temp::Float64, inum::Float64, jnum::Float64, knum::Float64, knum_save::Float64
+rc::Int32 = convert(Int32, 0), cc::Int32, i::Int32, j::Int32, k::Int32
+inum_save::Float64 = convert(Float64, 0), jnum_save::Float64, es11::Float64, es12::Float64, es12_save::Float64, es12p13::Float64, es01::Float64, es02::Float64, es023::Float64, pmf_d_save::Float64, pmf_e_save::Float64, prob_d::Float64, mode::Float64
+all_d_zero::Bool = convert(Bool, 0)
 rc = r.Rows.count
 cc = r.Columns.count
 if rc < 2 || cc < 2 || min(rc, cc) >= 3 && max(rc, cc) >= 4
@@ -12425,11 +12425,11 @@ while pmf_d > 0.0
       pmf_e = pmf_e * ((es12p13 - es12) * (es02 - es12))
       es12 = es12 + 1.0
       pmf_e = pmf_e / (es12 * (es023 - es02 - es12p13 + es12))
-      if pmf_e = 0.0 Exit Do
+      if pmf_e = 0.0 break
       prob_d = prob_d + pmf_e * fet_23(3, colsum, rowsum, pmf_Obs / (pmf_d * pmf_e), inum, jnum)
       if inum > jnum
          prob_d = prob_d + comp_cdf_hypergeometric(es12, es02, es12p13, es023)
-         Exit Do
+         break
       end
    end
    inum = inum_save
@@ -12444,11 +12444,11 @@ while pmf_d > 0.0
       pmf_e = pmf_e * (es12 * (es023 - es02 - es12p13 + es12))
       es12 = es12 - 1.0
       pmf_e = pmf_e / ((es12p13 - es12) * (es02 - es12))
-      if pmf_e = 0.0 Exit Do
+      if pmf_e = 0.0 break
       prob_d = prob_d + pmf_e * fet_23(3, colsum, rowsum, pmf_Obs / (pmf_d * pmf_e), inum, jnum)
       if inum > jnum
          prob_d = prob_d + cdf_hypergeometric(es12 - 1.0, es02, es12p13, es023)
-         Exit Do
+         break
       end
    end
    prob = prob + prob_d * pmf_d
@@ -12458,7 +12458,7 @@ while pmf_d > 0.0
    es11 = es11 + 1.0
    es12p13 = es12p13 - 1.0
    pmf_d = pmf_d / (es11 * (cs - es01 - es(1, 0) + es11))
-   if pmf_d = 0.0 Exit Do
+   if pmf_d = 0.0 break
    es12 = Int((es02 + 1.0) * (es12p13 + 1.0) / (es023 + 2.0))
    colsum(1) = es01 - es11
    colsum(2) = es02 - es12
@@ -12528,7 +12528,7 @@ while pmf_d > 0.0
    prob_d = fet_23(3, colsum, rowsum, pmf_Obs / (pmf_d * pmf_e), inum, jnum)
    if inum > jnum
       prob = prob + comp_cdf_hypergeometric(es11 - 1.0, es01, es(1, 0), cs)
-      Exit Do
+      break
    end
    prob_d = prob_d * pmf_e
    inum_save = inum
@@ -12545,7 +12545,7 @@ Do
    es11 = es11 - 1.0
    es12p13 = es12p13 + 1.0
    pmf_d = pmf_d / ((es01 - es11) * (es(1, 0) - es11))
-   if pmf_d = 0.0 Exit Do
+   if pmf_d = 0.0 break
    es12 = Int((es02 + 1.0) * (es12p13 + 1.0) / (es023 + 2.0))
    colsum(1) = es01 - es11
    colsum(2) = es02 - es12
@@ -12615,7 +12615,7 @@ Do
    prob_d = fet_23(3, colsum, rowsum, pmf_Obs / (pmf_d * pmf_e), inum, jnum)
    if inum > jnum
       prob = prob + cdf_hypergeometric(es11, es01, es(1, 0), cs)
-      Exit Do
+      break
    end
    prob_d = prob_d * pmf_e
    inum_save = inum
@@ -12627,11 +12627,11 @@ Do
       pmf_e = pmf_e * ((es12p13 - es12) * (es02 - es12))
       es12 = es12 + 1.0
       pmf_e = pmf_e / (es12 * (es023 - es02 - es12p13 + es12))
-      if pmf_e = 0.0 Exit Do
+      if pmf_e = 0.0 break
       prob_d = prob_d + pmf_e * fet_23(3, colsum, rowsum, pmf_Obs / (pmf_d * pmf_e), inum, jnum)
       if inum > jnum
          prob_d = prob_d + comp_cdf_hypergeometric(es12, es02, es12p13, es023)
-         Exit Do
+         break
       end
    end
    inum = inum_save
@@ -12646,11 +12646,11 @@ Do
       pmf_e = pmf_e * (es12 * (es023 - es02 - es12p13 + es12))
       es12 = es12 - 1.0
       pmf_e = pmf_e / ((es12p13 - es12) * (es02 - es12))
-      if pmf_e = 0.0 Exit Do
+      if pmf_e = 0.0 break
       prob_d = prob_d + pmf_e * fet_23(3, colsum, rowsum, pmf_Obs / (pmf_d * pmf_e), inum, jnum)
       if inum > jnum
          prob_d = prob_d + cdf_hypergeometric(es12 - 1.0, es02, es12p13, es023)
-         Exit Do
+         break
       end
    end
    prob = prob + prob_d * pmf_d
